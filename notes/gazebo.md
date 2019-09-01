@@ -131,3 +131,9 @@ There are many environment variables that Gazebo uses, primarily to locate files
 ## 6. Plugins
 To interact with a world, model, or sensor in Gazebo, you can write plugins. These plugins can be either loaded from the command line or added to your SDF world file. You’ll learn about World Plugins later in the lesson.
 
+# Understanding Gazebo GUI
+
+refere to this video:
+
+<iframe width="853" height="480" src="https://www.youtube.com/embed/YJtzU64YTlg" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
