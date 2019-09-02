@@ -353,5 +353,11 @@ $ gazebo myworld --verbose
 
 ```
 
+For further info refer to this [video](https://youtu.be/9dNNn8GhVi4)
+
+# Exploring the bulding editor
+
+For a simple case check out [this video](https://youtu.be/TQ9XSYq_hM8)
+
 
 
