@@ -219,5 +219,139 @@ The Menu: Some of the menu options are duplicated in the Toolbars or as right-cl
 
 ![](img/menu.png)
 
+# Simulating first robot
+
+Following videos include instructions to create a simple wheel robot:
+
+- [video 1](https://youtu.be/hDZ5MXNTX0U)
+- [video 2](https://youtu.be/IkG0PjAvdJI)
+- [video 3](https://youtu.be/7VIj6Cvogjc)
+
+The related files are in the following folders: `gz_workspace/myfirstrobot`
+
+# Writing a Plugin
+Here is a simple example of how to write an example for Gazebo so that as soon as simulation starts prints a "hello world" message.
+
+**1. Create a directory for scripts inside “myrobot” to store a `hello.cpp` file**
+
+```bash
+
+$ cd /home/workspace/myrobot
+$ mkdir script
+$ cd script
+$ gedit hello.cpp
+
+```
+
+Inside `hello.cpp`, include this code:
+
+```cpp
+
+#include <gazebo/gazebo.hh>
+
+namespace gazebo
+{
+  class WorldPluginMyRobot : public WorldPlugin
+  {
+    public: WorldPluginMyRobot() : WorldPlugin()
+            {
+              printf("Hello World!\n");
+            }
+
+    public: void Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
+            {
+            }
+  };
+  GZ_REGISTER_WORLD_PLUGIN(WorldPluginMyRobot)
+}
+
+```
+
+**2. Create a CMakeLists.txt file**
+
+```bash
+
+$ cd /home/workspace/myrobot
+$ gedit CMakeLists.txt
+
+```
+
+Inside, `CMakeLists.txt`, include the following:
+
+```cpp
+
+cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+
+find_package(gazebo REQUIRED)
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
+list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
+
+add_library(hello SHARED script/hello.cpp)
+target_link_libraries(hello ${GAZEBO_LIBRARIES})
+
+```
+
+**3. Create a build directory and compile the code**
+
+```bash
+
+$ cd /home/workspace/myrobot
+$ mkdir build
+$ cd build/
+$ cmake ../
+$ make # You might get errors if your system is not up to date!
+$ export GAZEBO_PLUGIN_PATH=${GAZEBO_PLUGIN_PATH}:/home/workspace/myrobot/build
+
+```
+
+**4. Open your world file and attach the plugin to it**
+
+```bash
+
+$ cd /home/workspace/myrobot/world/
+$ gedit myworld
+
+```
+
+Copy this code
+
+```xml
+
+<plugin name="hello" filename="libhello.so"/>
+
+```
+
+and paste it under
+
+```xml
+
+<world name="default">
+
+```
+
+**5. Launch the world file in Gazebo to load both the world and the plugin**
+
+```bash
+
+$ cd /home/workspace/myrobot/world/
+$ gazebo myworld
+
+```
+
+**6. Visualize the output**
+
+A `Hello World!` message is printed in the terminal. This message interacts with the Gazebo World that includes your two-wheeled robot.
+
+**Troubleshooting**
+
+In case your plugins failed to load, you'll have to check and troubleshoot your error. The best way to troubleshoot errors with Gazebo is to launch it with the verbose as such:
+
+```bash
+
+$ gazebo myworld --verbose
+
+```
+
 
 
