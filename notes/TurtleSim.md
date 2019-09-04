@@ -152,4 +152,6 @@ If we then command the turtle to move from the `turtle_teleop_key` window, we wi
 
 <div style="text-align:center"><img src="img/echo-topic.png" alt="drawing" width="500"/></div>
 
-
+<p align="center">
+<img src="img/echo-topic.png" alt="drawing" width="500"/
+</p>
