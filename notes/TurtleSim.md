@@ -4,7 +4,9 @@ We'll get familiar with the Turtlesim package for robotics.
 ## Some history of turtles in robotics
 William Grey Walter's influence is still felt today. He referred to his robots as 'turtles' and, as you will see, the moniker stuck. The image below is William Walter's Elsie (the robot mentioned in the video) without her protective covering.
 
-<div style="text-align:center"><img src="img/elsie.png" alt="drawing" width="400"/></div>
+<p align="center">
+<img src="img/elsie.png" alt="drawing" width="400"/>
+</p>
 
 Long after William Walter’s work with Elmer and Elsie, Dr. Seymour Papert, a professor at MIT, began to use turtle robots for education. One of the characteristics of Papert's robots was their ability to draw on paper.
 
@@ -14,23 +16,31 @@ Despite being a general-purpose language, LOGO is known for its use of “[turtl
 
 The image below shows an example of Valiant Technology’s Turtle robot drawing on a sheet of paper.
 
-<div style="text-align:center"><img src="img/turtlegraphics.png" alt="drawing" width="300"/></div>
+<p align="center">
+<img src="img/turtlegraphics.png" alt="drawing" width="300"/>
+</p>
 
 While turtle graphics seem simple, people have used them to create a wide variety of interesting drawings and art.
 
 The image below depicts some drawings of three dimensional spheres creating using turtle graphics. The website [turtleart.org](http://turtleart.org/) hosts a gallery containing even more outstanding examples!
 
-<div style="text-align:center"><img src="img/threedim.png" alt="drawing" width="300"/></div>
+<p align="center">
+<img src="img/threedim.png" alt="drawing" width="300"/>
+</p>
 
 If you'd like to have some fun with turtle graphics, feel free to try out the [Turtle Graphics 1.01](https://scratch.mit.edu/projects/1250518/) project, which allows you to experiment with turtle graphics through MIT’s graphical programming environment scratch.
 
 Below is the result of a program written using Turtle Graphics. Looking at this image, answer the quiz question about it.
 
-<div style="text-align:center"><img src="img/turtlescreenshot.png" alt="drawing" width="300"/></div>
+<p align="center">
+<img src="img/turtlescreenshot.png" alt="drawing" width="300"/>
+</p>
 
 This tradition of turtles in robotics is alive and well today. In fact, each recent version of ROS has been named after some sort of turtle. In addition to this turtle-centric naming convention, the Open-Source Robotics Foundation also adds a new turtle to `turtle_sim` with each release.
 
-<div style="text-align:center"><img src="img/ros-versions.png" alt="drawing" width="500"/></div>
+<p align="center">
+<img src="img/ros-versions.png" alt="drawing" width="500"/>
+</p>
 
 ## Run Turtlesim
 
@@ -64,7 +74,9 @@ $ roscore
 
 If all goes well (and it should), you will see output similar to this:
 
-<div style="text-align:center"><img src="img/roscore.png" alt="drawing" width="500"/></div>
+<p align="center">
+<img src="img/roscore.png" alt="drawing" width="500"/>
+</p>
 
 This indicates that ROS Master is running! To terminate the ROS Master process, you can simply send the SIGINT signal to the process by pressing ctrl-c in the roscore terminal window.
 
@@ -93,14 +105,18 @@ $ rosrun turtlesim turtle_teleop_key
 
 By using the arrow keys with the `turtle_teleop_key` node’s console selected, we are able to move the turtle in turtlesim!
 
-<div style="text-align:center"><img src="img/turtlesim.png" alt="drawing" width="600"/></div>
+<p align="center">
+<img src="img/turtlesim.png" alt="drawing" width="600"/>
+</p>
 
 See the video [here](https://youtu.be/tCo-jEAcAtc).
 
 ## Turtlesim Comms: List Nodes
 To get a list of all nodes that are active and have been registered with the ROS Master, we can use the command `rosnode list`.
 
-<div style="text-align:center"><img src="img/rosnode-list.png" alt="drawing" width="500"/></div>
+<p align="center">
+<img src="img/rosnode-list.png" alt="drawing" width="500"/>
+</p>
 
 We can see that there are three active nodes that have been registered with the ROS Master: `/rosout`, `/teleop_turtle`, and `/turtlesim`.
 
@@ -113,7 +129,9 @@ See the video [here](https://youtu.be/urpcfbmJwO0)
 ## Turtlesim Comms: List Topics
 In a similar fashion, we are able to query the ROS Master for a list of all topics. To do so, we use the command `rostopic list`.
 
-<div style="text-align:center"><img src="img/rostopic-list.png" alt="drawing" width="500"/></div>
+<p align="center">
+<img src="img/rostopic-list.png" alt="drawing" width="500"/>
+</p>
 
 - `/rosout_agg`: Aggregated feed of messages published to /rosout.
 - `/turtle1/cmd_vel`: Topic on which velocity commands are sent/received. Publishing a velocity message to this topic will command turtle1 to move.
@@ -125,14 +143,18 @@ See the video [here](https://youtu.be/eyCGtcNYaew)
 ## Turtlesim Comms: Get Topic Info
 If we wish to get information about a specific topic, who is publishing to it, subscribed to it, or the type of message associated with it, we can use the command `rostopic info` . Let’s check into the `/turtle1/cmd_vel` topic:
 
-<div style="text-align:center"><img src="img/rostopic-info.png" alt="drawing" width="500"/></div>
+<p align="center">
+<img src="img/rostopic-info.png" alt="drawing" width="500"/>
+</p>
 
 As you might expect, there are two nodes registered on this topic. One publisher, the `teleop_turtle` node, and one subscriber, the `turtlesim` node. Additionally, we see that the type of message used on this topic is `geometry_msgs/Twist`.
 
 ## Turtlesim Comms: Message Information
 Let’s get some more information about the `geometry_msgs/Twist` message on the `/turtle1/cmd_vel` topic. To do so, we will use the `rosmsg info` command:
 
-<div style="text-align:center"><img src="img/rosmsg-info.png" alt="drawing" width="500"/></div>
+<p align="center">
+<img src="img/rosmsg-info.png" alt="drawing" width="500"/>
+</p>
 
 We can see that a `Twist` message consists nothing more than two `Vector3` messages. One for linear velocity, and another for angular velocity, with each velocity component (x,y,z) represented by a float64.
 
@@ -149,8 +171,6 @@ Sometimes it may be useful to look at a topic’s published messages in real tim
 rostopic echo /turtle1/cmd_vel
 ```
 If we then command the turtle to move from the `turtle_teleop_key` window, we will be able to see the output message in real-time!
-
-<div style="text-align:center"><img src="img/echo-topic.png" alt="drawing" width="500"/></div>
 
 <p align="center">
 <img src="img/echo-topic.png" alt="drawing" width="500"/

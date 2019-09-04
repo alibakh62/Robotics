@@ -6,7 +6,9 @@ Gazebo is a physics-based, high fidelity 3D simulator for robotics. Gazebo provi
 
 Gazebo facilitates robotic design, rapid prototyping, testing, and simulation of real-life scenarios. While Gazebo is platform agnostic and runs on Windows, Mac, and Linux, it is mostly used in conjunction with the Robotics Operating System (ROS) running on Linux systems. Gazebo is an essential tool for every roboticist.
 
-![](img/gazebo-gui.png)
+<p align="center">
+<img src="img/gazebo-gui.png" alt="drawing" width="600"/>
+</p>
 
 ## Gazebo Features
 Gazebo has eight features that you can take advantage of:
@@ -147,7 +149,9 @@ The scene is where you will be spending most of your time, whether creating a si
 
 You can pan the scene by pressing the left mouse button and dragging. If you hold down SHIFT in addition, you can now rotate the view. You can zoom in and out by using the mouse scroll or pressing and dragging the RMB.
 
-![](img/gazebo-mouse.png)
+<p align="center">
+<img src="img/gazebo-mouse.png" alt="drawing" width="600"/>
+</p>
 
 ## Side Panel
 The side panel on the left consists of three tabs:
@@ -217,7 +221,9 @@ The Bottom Toolbar has a neat play and pause button. This button allows you to p
 ## Menu
 The Menu: Some of the menu options are duplicated in the Toolbars or as right-click context menu options in the Scene. If you click on Edit, you can switch to the Building Editor to design building or the Model Editor to build models. We will be working in both of these features in the upcoming concepts.
 
-![](img/menu.png)
+<p align="center">
+<img src="img/menu.png" alt="drawing" width="600"/>
+</p>
 
 # Simulating first robot
 

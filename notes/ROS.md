@@ -30,13 +30,17 @@ ROS breaks these steps into _**nodes**_. Each node is responsible for a portion 
 
 _**ROS master process**_ connects all the nodes to each other and allow them to share data and communicate between each other. It also functions as **parameter server** so that all the nodes store their data into it, making it available for all others nodes to use it. So rather than storing the same information over multiple places, nodes can look up the values as needed.
 
+<p align="center">
 <img src="img/nodes.png" alt="drawing" width="600"/>
+</p>
 
 _**Topics:**_ Nodes can also share messages with one another over "topics". You can think of *topics* as pipes between nodes through which messages flow. 
 
 In order to send a message the node needs to **publish** to a topic and the receiving node needs to **subscribe** to that topic.
 
+<p align="center">
 <img src="img/topics.png" alt="drawing" width="600"/>
+</p>
 
 Each node can simultaneously publish and subscribe to a variety of topics. 
 
@@ -64,7 +68,9 @@ Currently, there are over _200_ message types in ROS. However, you may still nee
 
 Message types can contains any kind of data and not only limited to text. For example, check out the different message types in the topics example above.
 
+<p align="center">
 <img src="img/topics.png" alt="drawing" width="600"/>
+</p>
 
 ## Services
 The "pub-sub" interaction architecture is useful but it's not one size fit all solution. We still need some other architecture for other kinds of interactions. For example, there are times where **Request-Response** pattern is useful. For these kind of interactions, ROS provides what's called **Services**. 
@@ -73,11 +79,15 @@ Like _topics_, services allows passing message between nodes, however, unlike to
 
 For example, let's say the "behavior executor" node wants to capture an image from the camera. One way is to create a topic "`/camera_image`", so that every time the camera captures an image, it'll send it over to the "behavior executor". 
 
-<div style="text-align:center"><img src="img/services1.png" alt="drawing" width="300"/></div>
+<p align="center">
+<img src="img/services1.png" alt="drawing" width="300"/>
+</p>
 
 However, "behavior executor" may not want to receive images all the times, only sometimes based on its own request. In such case, we can create a service, call it "`/capture_image`". Now, everytime "behavior executor" wants an image, it'll send a request (maybe with some parameter like exposure time) and will receive an image from the camera.
 
-<div style="text-align:center"><img src="img/services2.png" alt="drawing" width="300"/></div>
+<p align="center">
+<img src="img/services2.png" alt="drawing" width="300"/>
+</p>
 
 ## Compute Graph
 These diagrams of nodes and their connections are usually referred to as "compute graphs". Visualizing the compute graphs is useful for understanding which nodes exist and how they communicate with one another. ROS can produce the compute graphs.
