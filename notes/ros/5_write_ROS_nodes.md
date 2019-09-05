@@ -702,4 +702,171 @@ ROS_INFO_STREAM(res.msg_feedback);
 
 Finally, the `safe_move` service returns back a message indicating that the arm has moved to its new position and displays the clamped joint angles.
 
+## Build, Launch and Interact
 
+**Modifying CMakeLists.txt**
+
+Before compiling the `arm_mover.cpp` code, you have to include instructions for the compiler. To do so, open the `simple_arm` package `CMakeLists.txt` file located in `/home/workspace/catkin_ws/src/simple_arm/`, and add the following instructions at the bottom of the file:
+
+```txt
+add_executable(arm_mover src/arm_mover.cpp)
+target_link_libraries(arm_mover ${catkin_LIBRARIES})
+add_dependencies(arm_mover simple_arm_generate_messages_cpp)
+```
+
+**Building the package**
+
+Now that you’ve written the `arm_mover` C++ script, and included specific instructions for your compiler, let’s build the package:
+
+```bash
+$ cd /home/workspace/catkin_ws/
+$ catkin_make
+```
+
+**Launching the project with the new service**
+
+To get the `arm_mover` node, and accompanying `safe_move` service, to launch along with all of the other nodes, modify `robot_spawn.launch`.
+
+Launch files, when they exist, are located within the `launch` directory in the root of a catkin package. Inside a launch file, you can instruct ROS Master which nodes to run. Also you can specify certain parameters and arguments for each of your nodes. Thus, a launch file is necessary inside a ROS package containing more than one node or a node with multiple parameters and arguments. This launch file can run all the nodes within a single command: 
+`roslaunch package_name launch_file.launch`. `simple_arm`’s launch file is located in `/home/workspace/catkin_ws/src/simple_arm/launch`
+
+To get the `arm_mover` node to launch, add the following:
+
+```xml
+  <!-- The arm mover node -->
+  <node name="arm_mover" type="arm_mover" pkg="simple_arm" output="screen">
+    <rosparam>
+      min_joint_1_angle: 0
+      max_joint_1_angle: 1.57
+      min_joint_2_angle: 0
+      max_joint_2_angle: 1.0
+    </rosparam>
+  </node>
+  ```
+Inside the launch file, the node tag specifies the name, type, package name and output channel. The ROS parameters specify the min and max joint angles. More information on the format of the launch file can be found on the [XML page of the ROS wiki](http://wiki.ros.org/roslaunch/XML).
+
+**Testing the new service**
+
+Now that you've built your code and modified the launch file, you are ready to test it all out.
+Launch the `simple_arm`, verify that the `arm_mover` node is running and that the `safe_move` service is listed:
+
+**NOTE:** You will need to make sure that you've exited your previous `roslaunch` session before re-launching.
+
+```bash
+$ cd /home/workspace/catkin_ws/
+$ source devel/setup.bash
+$ roslaunch simple_arm robot_spawn.launch
+```
+
+Then, in a new terminal, verify that the node and service have indeed launched.
+
+```bash
+$ rosnode list
+$ rosservice list
+```
+
+Check that both the service (`/arm_mover/safe_move`) and the node (`/arm_mover`) show up as expected. If they do not appear, check the logs in the `roscore` console. You can now interact with the service using `rosservice`.
+
+To view the camera image stream, you can use the command `rqt_image_view` (you can learn more about rqt and the associated tools on the [RQT page of the ROS wiki](http://wiki.ros.org/rqt)):
+
+```bash
+$ rqt_image_view /rgb_camera/image_raw
+```
+
+<p align="center">
+<img src="img/rqtimage.png" alt="drawing" width="600"/>
+</p>
+
+**Adjusting the view**
+
+The camera is displaying a gray image. This is to be expected, given that it is pointing straight up, towards the gray sky of our Gazebo world.
+
+To point the camera towards the numbered blocks on the countertop, we need to rotate both joint 1 and joint 2 by approximately pi/2 radians. Let’s give that a try:
+
+```bash
+$ cd /home/workspace/catkin_ws/
+$ source devel/setup.bash
+$ rosservice call /arm_mover/safe_move "joint_1: 1.57
+joint_2: 1.57"
+```
+
+**NOTE:** `rosservice call` can tab-complete the request message, so that you don’t have to worry about writing it out by hand. Also, be sure to include a line break between the two joint parameters.
+
+Upon entering the command, you should see the arm move and eventually stop, reporting the new joint clamped angles to the console. This is as expected.
+
+What was not expected was the resulting position of the arm. Looking at the `roscore` console, we can see the problem. The requested angle for joint 2 was out of the safe bounds, so it was clamped. We requested 1.57 radians, but the maximum joint angle was set to 1.0 radians.
+
+By setting the `max_joint_2_angle` on the parameter server, we should be able to increase joint 2’s maximum angle and bring the blocks into view the next time we request a service. To update that parameter, use the command `rosparam`:
+
+```bash
+$ rosparam set /arm_mover/max_joint_2_angle 1.57
+```
+
+Now we should be able to move the arm such that all of the blocks are within the field of view of the camera:
+
+```bash
+$ rosservice call /arm_mover/safe_move "joint_1: 1.57
+joint_2: 1.57"
+```
+
+<p align="center">
+<img src="img/camerablocks.png" alt="drawing" width="600"/>
+</p>
+
+And there you have it. All of the blocks are within the field of view!
+
+Refer to this [Github page](https://github.com/udacity/RoboND-simple_arm/tree/arm_mover) for a copy of this branch.
+
+## ROS Clients and Subscribers
+Writing the `arm_mover node`, you practiced generating custom messages, publishing to a topic, building ROS services servers, setting parameters, and creating launch files. You almost have a complete overview of ROS, but you still have to learn ROS **clients** to request services from client nodes, as well as ROS **subscribers**.
+
+**ROS Clients**
+
+A service client defined inside a service client node can request services from a service server node. In C++, ROS clients frequently have the following format, although other parameters and arguments are possible:
+
+```cpp
+ros::ServiceClient client = n.serviceClient<package_name::service_file_name>("service_name");
+```
+
+The `client` object is instantiated from the ros::ServiceClient class. This object allows you to request services by calling the `client.call()` function.
+
+To communicate with the ROS Master in C++, you need a **NodeHandle**. The node handle `n` will initialize the node.
+
+The `package_name::service_file_name` indicates the name of the service file located in the `srv` directory of the package.
+
+The `service_name` argument indicates the name of the service which is defined in the service server node.
+
+**ROS Subscribers**
+
+A subscriber enables your node to read messages from a topic, allowing useful data to be streamed to the node. In C++, ROS subscribers frequently have the following format, although other parameters and arguments are possible:
+
+```cpp
+ros::Subscriber sub1 = n.subscribe("/topic_name", queue_size, callback_function);
+```
+
+The `sub1` object is a subscriber object instantiated from the ros::Subscriber class. This object allows you to subscribe to messages by calling the `subscribe()` function.
+
+To communicate with the ROS Master in C++, you need a **NodeHandle**. The node handle `n` will initialize the node.
+
+The `"/topic_name"` indicates the topic to which the Subscriber should listen.
+
+The `queue_size` determines the number of messages that can be stored in a queue. If the number of messages published exceeds the size of the queue, the oldest messages are dropped. As an example, if the `queue_size` is set to 100 and the number of messages stored in the queue is equal to 100, we will have to start deleting old messages to make room in the queue for new messages. This means that we are unable to process messages fast enough and we probably need to increase the `queue_size`.
+
+The `callback_function` is the name of the function that will be run each incoming message. Each time a message arrives, it is passed as an argument to `callback_function`. Typically, this function performs a useful action with the incoming data. Note that unlike service handler functions, the `callback_function` is not required to return anything.
+
+For more information about subscribers, see the [Subscriber documentation on the ROS wiki](http://docs.ros.org/jade/api/roscpp/html/classros_1_1Subscriber.html).
+
+# Lookaway
+
+**Description of Look Away**
+
+To see a ROS **subscriber** and **client** in action, you'll write a node called `look_away`. The `look_away` node will subscribe to the `/rgb_camera/image_raw` topic, which has image data from the camera mounted on the end of the robotic arm. Whenever the camera is pointed towards an uninteresting image - in this case, an image with uniform color - the callback function will request a `safe_move` service to safely move the arm to something more interesting. There are a few extra pieces in the code to ensure that this procedure is executed smoothly, but we’ll focus on those later.
+
+**Updating the launch file**
+
+Just as we did with the `arm_mover` node, to get `look_away` to launch with the rest of the nodes, we will need to modify `robot_spawn.launch`, which can be found in `/home/workspace/catkin_ws/src/simple_arm/launch`. You can add the following code there:
+
+```xml
+<node name="look_away" type="look_away" pkg="simple_arm"/>
+
+``
