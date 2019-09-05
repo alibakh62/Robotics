@@ -868,5 +868,323 @@ Just as we did with the `arm_mover` node, to get `look_away` to launch with the 
 
 ```xml
 <node name="look_away" type="look_away" pkg="simple_arm"/>
+```
 
-``
+Remember that a half turn of a joint requires pi/2 radians of revolution. Numerically, pi/2 is approximately 1.57. Since we want to be able to revolve a joint halfway around with one request, it will be helpful to set `max_joint_2_angle: 1.57` in `arm_mover`:
+
+```xml
+  <!-- The arm mover node -->
+  <node name="arm_mover" type="arm_mover" pkg="simple_arm">
+    <rosparam>
+      min_joint_1_angle: 0
+      max_joint_1_angle: 1.57
+      min_joint_2_angle: 0
+      max_joint_2_angle: 1.57
+    </rosparam>
+  </node>
+```
+
+## The Code
+
+**Creating the empty `look_away` node script**
+
+The steps that you should take to create the `look_away` node are exactly the same as the steps you took to create the `simple_mover` and `arm_mover` scripts, but of course change the actual name of the file itself.
+
+Open a new terminal, and type the following:
+
+```bash
+$ cd /home/workspace/catkin_ws/src/simple_arm/src/
+$ gedit look_away.cpp
+```
+
+Now copy and paste the code below and save the file.
+
+**look_away.cpp**
+
+```cpp
+#include "ros/ros.h"
+#include "simple_arm/GoToPosition.h"
+#include <sensor_msgs/JointState.h>
+#include <sensor_msgs/Image.h>
+
+// Define global vector of joints last position, moving state of the arm, and the client that can request services
+std::vector<double> joints_last_position{ 0, 0 };
+bool moving_state = false;
+ros::ServiceClient client;
+
+// This function calls the safe_move service to safely move the arm to the center position
+void move_arm_center()
+{
+    ROS_INFO_STREAM("Moving the arm to the center");
+
+    // Request centered joint angles [1.57, 1.57]
+    simple_arm::GoToPosition srv;
+    srv.request.joint_1 = 1.57;
+    srv.request.joint_2 = 1.57;
+
+    // Call the safe_move service and pass the requested joint angles
+    if (!client.call(srv))
+        ROS_ERROR("Failed to call service safe_move");
+}
+
+// This callback function continuously executes and reads the arm joint angles position
+void joint_states_callback(const sensor_msgs::JointState js)
+{
+    // Get joints current position
+    std::vector<double> joints_current_position = js.position;
+
+    // Define a tolerance threshold to compare double values
+    double tolerance = 0.0005;
+
+    // Check if the arm is moving by comparing its current joints position to its latest
+    if (fabs(joints_current_position[0] - joints_last_position[0]) < tolerance && fabs(joints_current_position[1] - joints_last_position[1]) < tolerance)
+        moving_state = false;
+    else {
+        moving_state = true;
+        joints_last_position = joints_current_position;
+    }
+}
+
+// This callback function continuously executes and reads the image data
+void look_away_callback(const sensor_msgs::Image img)
+{
+
+    bool uniform_image = true;
+
+    // Loop through each pixel in the image and check if its equal to the first one
+    for (int i = 0; i < img.height * img.step; i++) {
+        if (img.data[i] - img.data[0] != 0) {
+            uniform_image = false;
+            break;
+        }
+    }
+
+    // If the image is uniform and the arm is not moving, move the arm to the center
+    if (uniform_image == true && moving_state == false)
+        move_arm_center();
+}
+
+int main(int argc, char** argv)
+{
+    // Initialize the look_away node and create a handle to it
+    ros::init(argc, argv, "look_away");
+    ros::NodeHandle n;
+
+    // Define a client service capable of requesting services from safe_move
+    client = n.serviceClient<simple_arm::GoToPosition>("/arm_mover/safe_move");
+
+    // Subscribe to /simple_arm/joint_states topic to read the arm joints position inside the joint_states_callback function
+    ros::Subscriber sub1 = n.subscribe("/simple_arm/joint_states", 10, joint_states_callback);
+
+    // Subscribe to rgb_camera/image_raw topic to read the image data inside the look_away_callback function
+    ros::Subscriber sub2 = n.subscribe("rgb_camera/image_raw", 10, look_away_callback);
+
+    // Handle ROS communication events
+    ros::spin();
+
+    return 0;
+}
+```
+
+See the video [here](https://youtu.be/DwVkiRRykRU).
+
+## The code: Explained
+
+```cpp
+#include "ros/ros.h"
+#include "simple_arm/GoToPosition.h"
+#include <sensor_msgs/JointState.h>
+#include <sensor_msgs/Image.h>
+```
+
+The header files are similar to those in `arm_mover`, except this time we included the `JointState.h` header file so that we can read the arm joints’ positions. We also include the `Image.h` header file so that we can use the camera data.
+
+```cpp
+ros::init(argc, argv, "look_away");
+ros::NodeHandle n;
+```
+
+Inside the C++ main function, the `look_away` node is initialized and a ROS NodeHandle object `n` is instantiated to communicate with ROS.
+
+```cpp
+client = n.serviceClient<simple_arm::GoToPosition>("/arm_mover/safe_move");
+```
+
+A `client` object is created here. This object can request `GoToPosition` services from the `/arm_mover/safe_move` service created earlier in the `arm_mover` node. This client object is defined globally in the code, so we can request services within any function. In particular, this happens in the `move_arm_center()` function.
+
+```cpp
+ros::Subscriber sub1 = n.subscribe("/simple_arm/joint_states", 10, joint_states_callback);
+```
+
+The first subscriber object `sub1`, subscribes to the `/simple_arm/joint_states` topic. By subscribing to this topic, we can track the arm position by reading the angle of each joint. The `queue_size` is set to 10, meaning that a maximum of 10 messages can be stored in the queue. The data from each new incoming message is passed to the `joint_states_callback` function.
+
+```cpp
+ros::Subscriber sub2 = n.subscribe("rgb_camera/image_raw", 10, look_away_callback);
+```
+
+The second subscriber object `sub2`, subscribes to the `/rgb_camera/image_raw` topic. The `queue_size` is also set to 10. And the `look_away_callback` function is called each time a new message arrives.
+
+```cpp
+ros::spin();
+```
+
+The `ros::spin()` function simply blocks until a shutdown request is received by the node.
+
+```cpp
+void joint_states_callback(const sensor_msgs::JointState js)
+{
+    // Get joints current position
+    std::vector<double> joints_current_position = js.position;
+
+    // Define a tolerance threshold to compare double values
+    double tolerance = 0.0005;
+
+    // Check if the arm is moving by comparing its current joints position to its latest
+    if (fabs(joints_current_position[0] - joints_last_position[0]) < tolerance && fabs(joints_current_position[1] - joints_last_position[1]) < tolerance)
+        moving_state = false;
+    else {
+        moving_state = true;
+        joints_last_position = joints_current_position;
+    }
+}
+```
+
+When `sub1` receives a message on the `/simple_arm/joint_states` topic, the message is passed to the `joint_states_callback` in the variable `js`. The `joint_states_callback()` function checks if the current joint states provided in `js` are the same as the previous joint states, which are stored in the global `joints_last_position` variable. If the current and previous joint states are the same (up to the specified error tolerance), then the arm has stopped moving, and the `moving_state` flag is set to `false`. This flag is defined globally so as to be shared with other functions in the code. On the other hand, if the current and previous joint states are different, then the arm is still moving. In this case, the function sets `moving_state` to `true` and updates the `joints_last_position` variable with current position data stored in `joints_current_position`.
+
+```cpp
+void look_away_callback(const sensor_msgs::Image img)
+{
+
+    bool uniform_image = true;
+
+    // Loop through each pixel in the image and check if its equal to the first one
+    for (int i = 0; i < img.height * img.step; i++) {
+        if (img.data[i] - img.data[0] != 0) {
+            uniform_image = false;
+            break;
+        }
+    }
+
+    // If the image is uniform and the arm is not moving, move the arm to the center
+    if (uniform_image == true && moving_state == false)
+        move_arm_center();
+}
+```
+
+The `look_away_callback()` function receives [image data](http://docs.ros.org/melodic/api/sensor_msgs/html/msg/Image.html) from the `/rgb_camera/image_raw` topic. The callback function first checks if all color values in the image are the same as the color value of the first pixel. Then, if the image is uniform and the arm is not moving, the `move_arm_center()` function is called.
+
+```cpp
+void move_arm_center()
+{
+    ROS_INFO_STREAM("Moving the arm to the center");
+
+    // Request centered joint angles [1.57, 1.57]
+    simple_arm::GoToPosition srv;
+    srv.request.joint_1 = 1.57;
+    srv.request.joint_2 = 1.57;
+
+    // Call the safe_move service and pass the requested joint angles
+    if (!client.call(srv))
+        ROS_ERROR("Failed to call service safe_move");
+}
+```
+
+Inside the `move_arm_center` function, a `GoToPosition` request message is created and sent using the `arm_mover/safe_move` service, moving both joint angles to `1.57` radians.
+
+## Build, Launch and Interact
+
+**Modifying CMakeLists.txt**
+
+Before compiling the `look_away.cpp` code, you have to include instructions for the compiler. As a reminder, for every C++ ROS node you write, you have to add its dependencies in `CMakeLists.txt` file. Open the `simple_arm` package’s `CMakeLists.txt` file, located in `/home/workspace/catkin_ws/src/simple_arm/`, and add the following instructions at the bottom of the file:
+
+```txt
+add_executable(look_away src/look_away.cpp)
+target_link_libraries(look_away ${catkin_LIBRARIES})
+add_dependencies(look_away simple_arm_generate_messages_cpp)
+```
+
+**Building the package**
+
+Now that you’ve written the `look_away` C++ script, and included specific instructions for your compiler, let’s build the package:
+
+```bash
+$ cd /home/workspace/catkin_ws/
+$ catkin_make
+```
+
+**Launching the nodes**
+
+You can now launch and interact with `simple_arm` just as before:
+
+```bash
+$ cd /home/workspace/catkin_ws/
+$ source devel/setup.bash
+$ roslaunch simple_arm robot_spawn.launch
+```
+
+**Interacting with the arm**
+
+After launching, the arm should move away from the grey sky and look towards the blocks. To view the camera image stream, you can use the same command as before:
+
+```bash
+$ rqt_image_view /rgb_camera/image_raw
+```
+
+To check that everything is working as expected, open a new terminal and send a service call to point the arm directly up towards the sky (note that the line break in the message is necessary):
+
+```bash
+$ cd /home/workspace/catkin_ws/
+$ source devel/setup.bash
+$ rosservice call /arm_mover/safe_move "joint_1: 0
+joint_2: 0"
+```
+
+You can always download a copy of this lab that includes all three nodes by visiting the [GitHub repo](https://github.com/udacity/RoboND-simple_arm/).
+
+## Pub-Sub Class
+Inside the publisher and subscriber nodes of this lesson, global variables and objects were defined to be used anywhere in the code. We did this to simplify the code, but it is not a good practice. You should always write a pub-sub class to easily share variables and objects with any callback function in your code. Here’s a [ROS pub-sub template class](https://answers.ros.org/question/59725/publishing-to-a-topic-via-subscriber-callback-function/) that you can use:
+
+**ROS Class C++ Code**
+
+```cpp
+#include <ros/ros.h>
+
+class SubscribeAndPublish
+{
+public:
+  SubscribeAndPublish()
+  {
+    //Topic you want to publish
+    pub_ = n_.advertise<PUBLISHED_MESSAGE_TYPE>("/published_topic", 1);
+
+    //Topic you want to subscribe
+    sub_ = n_.subscribe("/subscribed_topic", 1, &SubscribeAndPublish::callback, this);
+  }
+
+  void callback(const SUBSCRIBED_MESSAGE_TYPE& input)
+  {
+    PUBLISHED_MESSAGE_TYPE output;
+    //.... do something with the input and generate the output...
+    pub_.publish(output);
+  }
+
+private:
+  ros::NodeHandle n_; 
+  ros::Publisher pub_;
+  ros::Subscriber sub_;
+
+};//End of class SubscribeAndPublish
+
+int main(int argc, char **argv)
+{
+  //Initiate ROS
+  ros::init(argc, argv, "subscribe_and_publish");
+
+  //Create an object of class SubscribeAndPublish that will take care of everything
+  SubscribeAndPublish SAPObject;
+
+  ros::spin();
+
+  return 0;
+}
+```
