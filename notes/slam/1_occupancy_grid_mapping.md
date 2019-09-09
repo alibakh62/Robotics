@@ -55,5 +55,121 @@ To map an environment, we need information about walls and objects. For example,
 ## Mapping with known poses
 In mapping with known poses, poses (`X`) are known, we also have the measurements (`Z`). Then, using a mapping algorithm (say occupancy grid mapping), we can estimate the posterior map given the noisy measurements and known poses. **However**, in most robotic applications, the odometry dats is noisy, so the robot poses are unknown to us. _So, why mapping is necessary under such a situation?_ **Mapping usually happens after SLAM**. So, the power of mapping is its post-processing. In SLAM, the problem changes from mapping with known poses to mapping with unknown poses. During SLAM, the robot will build a map of the environment, localize itself with respect to the map. After SLAM, the **occupancy grid algorithm** uses the exact poses filtered from SLAM. Then, with the known poses from SLAM and noisy measurements, generates a map for path planning and navigation. 
 
+### Posterior Probability
+Going back to the graphical model of mapping with known poses, our goal is to implement a mapping algorithm and estimate the map given noisy measurements and assuming known poses.
 
+The Mapping with Known Poses problem can be represented with `P(m|Z_{1:t}, X_{1:t})` function. With this function, we can compute the posterior over the map given all the measurements up to time **t** and all the poses up to time **t** represented by the robot trajectory.
 
+In estimating the map, we’ll exclude the controls **u** since the robot path is provided to us from SLAM. However, keep in mind that the robot controls will be included later in SLAM to estimate the robot’s trajectory.
+
+<p align="center">
+<img src="img/post-prob.png" alt="drawing" width="500"/>
+</p>
+
+**2D maps:**
+
+For now, we will only estimate the posterior for two-dimensional maps. In the real world, a mobile robot with a two-dimensional laser rangefinder sensor is generally deployed on a flat surface to capture a slice of the 3D world. Those two-dimensional slices will be merged at each instant and partitioned into grid cells to estimate the posterior through the occupancy grid mapping algorithm. Three-dimensional maps can also be estimated through the occupancy grid algorithm, but at much higher computational memory because of the large number of noisy three-dimensional measurements that need to be filtered out.
+
+**Probability equations:**
+
+- Localization: `P(X_{1:t}|u_{1:t}, m, Z_{1:t})`
+- Mapping: `P(m|X_{1:t}, Z_{1:t})`
+- SLAM: `P(X_{1:t}, m|u_{1:t}, Z_{1:t})`
+
+## Grid Cells
+To estimate the posterior map, the occupancy grid will uniformly partition the two-dimensional space in a finite number of grid cells. Each of the grid cells will hold the binary random value that corresponds to the location it covers. Based on the measurement data, the grid will be filled with zeros and ones. If the laser range finder detects an obstacle, the cell will be considered occupied and its value will be one. Therefore, in a 2D space, `number of maps = 2^cells`. 
+
+See the video [here](https://youtu.be/WxRLYM7qHbc).
+
+## Computing the Posterior
+
+### First Approach: `P(m|X_{1:t}, Z_{1:t})`
+We just saw that maps have high dimensionality so it will be too pricey in terms of computational memory to compute the posterior under this first approach.
+
+### Second Approach: `P(m_{i}|X_{1:t}, Z_{1:t})`
+A second or better approach to estimating the posterior map is to decompose this problem into many separate problems. In each of these problems, we will compute the posterior map `m_{i}` at each instant. However, this approach still presents some drawbacks because we are computing the probability of each cell independently. Thus, we still need to find a different approach that addresses the dependencies between neighboring cells.
+
+### Third Approach: `Π_{i} (P(m_{i}|X_{1:t}, Z_{1:t}))`
+Now, the third approach is the best approach to computing the posterior map by relating cells and overcoming the huge computational memory, is to estimate the map with the product of marginals or factorization.
+
+<p align="center">
+<img src="img/post-compute.png" alt="drawing" width="500"/>
+</p>
+
+## Filtering
+So far, we managed to calculate the probability of grid cells using the factorization method. Due to factorization, we are now solving a binary estimation problem in which grid cells hold a static (state of system does not change during sensing) state that do not change over time. Locally, a filter to this problem exists, and is known as **Binary Bayes Filter**. It solves the static problem by taking log odds ratio of the belief. 
+
+With static state, the belief is now a function of the measurements only. Depending on the measurement values reflected, the state of the grid cell is updated. This belief is known by **inverse measurement model**, which represents the binary state of grid cells with respect to measurements. The **inverse measurement model** is generally used when measurements are more complex than the binary static state. For example, assume a mobile robot equipped with an RGB-D camera wants to estimate if a door is open or closed. The field of measurements represented by the camera image is huge compared to a simple binary state of the door either open or close. In such situations, it's always easier to use an **inverse sensor model** than a **forward sensor model**. The **Binary Bayes Filter** will solve the **inverse measurement model** with the log odds ratio representation. The advantage of using a log odds ratio representation is to avoid probability instabilities near zero or one. Another advantage relates to system speed, accuracy, and simplicity. Check out these two sources for more information on log probability and numerical stability:
+
+1. [Log Probability](https://en.wikipedia.org/wiki/Log_probability)
+2. [Numerical Stability](https://en.wikipedia.org/wiki/Numerical_stability)
+
+<p align="center">
+<img src="img/log-odds.png" alt="drawing" width="300"/>
+</p>
+
+See the video [here](https://youtu.be/gvSuVqEI5OI).
+
+**Forward vs. Inverse Measurement Model**
+
+_Forward Measurement Model_ - `P(z1:t| x)`: Estimating a posterior over the measurement given the system state.
+
+_Inverse Measurement Model_ - `P(x | z1:t)`: Estimating a posterior over the system state given the measurement.
+
+The inverse measurement model is generally used when measurements are more complex than the system's state.
+
+## Binary Bayes Filter Algorithm
+
+**Input**
+
+The binary Bayes filter algorithm computes the log odds of the posterior belief denoted by `l_t`. Initially, the filter takes the previous log odds ratio of the belief `t-1` and the measurements `z_t` as parameters.
+
+**Computation**
+
+Then, the filter computes the new posterior belief of the system `l_t` by adding the previous belief `l_{t-1}` to the log odds ratio of the inverse measurement model and subtracting the prior probability state also known by initial belief. The initial belief represents the initial state of the system before taking any sensor measurements into consideration.
+
+**Output**
+
+Finally, the algorithm returns the posterior belief of the system `l_t`, and a new iteration cycle begins.
+
+## Occupancy Grid Mapping Algorithm
+Now, let's code the algorithm in C++.
+
+Below, is the pseudo algorithm:
+
+<p align="center">
+<img src="img/occ_grid_map_algo.png.png" alt="drawing" width="300"/>
+</p>
+
+<p align="center">
+<img src="img/occ_grid_map_algo2.png.png" alt="drawing" width="300"/>
+</p>
+
+Also, what [this video](https://youtu.be/sDQ0KRYuPJM) for a detailed explanation.
+
+Now, let's assume a robot equipped with **eight sonar rangefinder sensors** circulates in an environment to map it. This robot is provided with its exact poses at each timestamp. The code structure is as follows:
+
+**Data Files**
+
+1. `measurement.txt`: The measurements from the sonar rangefinder sensors attached to the robot at each time stamp recorded over a period of 413 seconds. (timestamp, measurement 1:8).
+2. `poses.txt`: The exact robot poses at each timestamp recorded over a period of 413 seconds. (timestamp, x, y, ϴ).
+
+**Global Functions**
+
+1. `inverseSensorModel()`: We'll code this function second after doing the inverse sensor model for sonar rangefinder sensors.
+2. `occupancyGridMapping()`: We'll code this function here first.
+
+**Main Function**
+
+1. `File Scan`: Scanning both the measurement and poses files to retrieve the values. At each time stamp, the values are passed to the occupancy grid mapping function.
+2. `Display Map`: After processing all the measurements and poses, the map is displayed.
+
+Here are the steps to write the `occupancyGridMapping()` function:
+
+- Generate a grid (size 300x150) and then loop through all the cells.
+- Inside the loop, compute the center of mass of each cell `x_{i}` and `y_{i}`.
+- Inside the loop, check if each cell falls under the perceptual field of the measurement.
+
+**NOTE:** A cell would usually fall under the perceptual field of the measurements if the distance between the cell centroid and the robot pose is smaller or equal than the maximum measurements `Zmax`.
+
+Find the codes [here](codes/occupancy_grid_mapping/main.cpp)
