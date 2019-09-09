@@ -173,3 +173,71 @@ Here are the steps to write the `occupancyGridMapping()` function:
 **NOTE:** A cell would usually fall under the perceptual field of the measurements if the distance between the cell centroid and the robot pose is smaller or equal than the maximum measurements `Zmax`.
 
 Find the codes [here](codes/occupancy_grid_mapping/main.cpp)
+
+## Inverse Sensor Model
+Here is the pseudo algorithm for the inverse sensor model:
+
+<p align="center">
+<img src="img/inverse-sensor-model.png" alt="drawing" width="500"/>
+</p>
+
+See the video [here](https://youtu.be/JqCjlJxmR6o).
+
+**Summary of notations for the sonar rangefinder inverse sensor model:**
+
+- `m_i`: Map at instant i or current cell that is being processed
+- `x_i, y_i`: Center of mass of the current cell `m_i`
+- `r`: Range of the center of mass computed with respect to robot pose and center of mass
+- `k`: The sonar rangefinder cone that best aligns with the cell being considered computed with respect to the robot pose `(x,y,θ)`, center of mass `(x_i,y_i)`, and sensor angle.
+- `β`: Opening angle of the conical region formed out of the measurement beams.
+- `α`: Width of obstacles which is almost equal to the size of a cell. Please not that alpha is not the width of the conical region as the video mention but instead it's the width of a cell.
+
+The `inverseSensorModel()` has two separate tasks:
+
+- compute `r` and `phi`
+- Evaluate three different cases of algorithm
+
+Find the codes [here](codes/occupancy_grid_mapping/main.cpp)
+
+## Generate the Map
+
+**Mapping**
+
+So far, we’ve coded the Occupancy Grid Mapping algorithm in C++ and generated an occupancy grid map 2D vector. Now, we'll code a visualization function that will loop through each cell. Then, we'll differentiate between occupied, free, and unknown cells depending on their log odds value. And, finally, we'll plot each cell on a graph to generate the map.
+
+<To be completed>!!!!!!!!!!!!
+
+## Multi Sensor Fusion
+<To be completed>!!!!!!!!!!!!
+
+## Introduction to 3D Mapping
+So far, you’ve heard about two dimensional maps, describing a slice of the 3D world. In resource constrained systems, it can be very computationally expensive to build and maintain these maps. 3D representations are even more costly. That being said, robots live in the 3D world, and we want to represent that world and the 3D structures within it as accurately and reliably as possible. 3D mapping would give us the most reliable collision avoidance, and motion and path planning, especially for flying robots or mobile robots with manipulators.
+
+First, let’s talk briefly about how we collect this 3D data, then we will move on to how it is represented. To create 3D maps, robots sense the environment by taking 3D range measurements. This can be done using numerous technologies.
+
+3D lidar can be used, which is a single sensor with an array of laser beams stacked horizontally. Alternatively, a 2D lidar can be tilted (horizontally moving up and down) or rotated (360 degrees) to obtain 3D coverage.
+
+An RGBD camera is a single visual camera combined with a laser rangefinder or infrared depth sensor, and allows for the determination of the depth of the image, and ultimately the distance from an object. A stereo camera is a pair of offset cameras, and can be used to directly infer the distance of close objects, in the same way as humans do with their two eyes.
+
+A single camera system is cheaper and smaller, but the software algorithms needed for monocular SLAM are much more complex. Depth cannot be directly inferred from the sensor data of a single image from a single camera. Instead, it is calculated by analysing data from a sequence of frames in a video.
+
+## 3D Data Representation
+See the [video](https://youtu.be/hvkGrM-jZXA) first.
+
+Some of the desired characteristics of an optimal representation:
+
+- Probabilistic data representations can be used to accommodate for sensor noise and dynamic environments.
+- It is important to be able to distinguish data that represents an area that is free space versus an area that is unknown or not yet mapped. This will enable the robot to plan an unobstructed path and build a complete map.
+- Memory on a mobile robot is typically a limited resource, so memory efficiency is very important. The map should also be accessible in the robot’s main memory, while mapping a large area over a long period of time. To accomplish this, we need a data representation that is compact and allows for efficient updates and queries.
+
+**2.5D maps**, also known as **height maps**, store the surface of the entire environment as the maximum height measured at every point. They are memory efficient, with constant access time. This type of mapping is not very useful if you have terrain with trees or overhang structures, where the robot could move underneath. Also, height maps are non-probabilistic. Similar to point clouds, there is also no distinction between free and unknown space.
+
+**Elevation maps** are 2D grids that store an estimated height, or elevation, for each cell. A Kalman filter is used to estimate the height, and can also incorporate the uncertainty of the measurement process itself, which typically increases with the measured distance. One problem with elevation maps is the vertical wall - you can tell there is a vertical object but don’t know exactly how tall it is.
+
+**Extended elevation maps** store a set of estimated heights for every cell, and include cells that contain gaps. You can check whether the variance of the height of all data points within each cell is large. If so, you can investigate whether the corresponding set of points contains a gap exceeding the height of the robot (known as a “gap cell”), and ultimately use gap cells to determine traversability.
+
+In **multi-level surface (MLS)** map representations, each 2D cell stores “patches”, of which there can be multiple per cell. Each patch contains 3 key pieces of information - the height mean, the height variance, and the depth value. The height mean is the estimated height of the individual vertical area, also referred to as an interval. The uncertainty of the height is stored as the height variance, with the assumption that the error is represented by a Gaussian distribution. The depth value is defined by the difference between height of the surface patch and the height of the lowest measurement that is considered as belonging to that vertical object (ex the depth of the floor would be 0). Individual surfaces can be directly calculated, allowing the robot to deal with vertical and overhanging objects. This method also works very well with multi-level traversable surfaces, such as a bridge that you could travel over top of, or underneath, or a structure like a parking garage. An MLS map isn’t a volumetric representation, but a discretization in the vertical dimension. Unknown areas are not represented, and localization for this method is not straightforward.
+
+**Octomap** See [this video](https://youtu.be/9s9ibmsQ4lQ) for a brief explanation. Also check out their [Github page](https://octomap.github.io/) as well as the documentation on [ROS Wiki](http://wiki.ros.org/octomap).
+
+
