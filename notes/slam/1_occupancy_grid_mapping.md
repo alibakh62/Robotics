@@ -138,11 +138,11 @@ Now, let's code the algorithm in C++.
 Below, is the pseudo algorithm:
 
 <p align="center">
-<img src="img/occ_grid_map_algo.png.png" alt="drawing" width="300"/>
+<img src="img/occ_grid_map_algo.png" alt="drawing" width="300"/>
 </p>
 
 <p align="center">
-<img src="img/occ_grid_map_algo2.png.png" alt="drawing" width="300"/>
+<img src="img/occ_grid_map_algo2.png" alt="drawing" width="300"/>
 </p>
 
 Also, what [this video](https://youtu.be/sDQ0KRYuPJM) for a detailed explanation.
