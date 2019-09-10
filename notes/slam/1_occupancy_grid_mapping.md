@@ -175,6 +175,8 @@ Here are the steps to write the `occupancyGridMapping()` function:
 Find the codes [here](codes/occupancy_grid_mapping/main.cpp)
 
 ## Inverse Sensor Model
+Inverse sensor model helps to determine probability for the cells on the border. Because they're partially observed, it's hard to calculate their probabilities.
+
 Here is the pseudo algorithm for the inverse sensor model:
 
 <p align="center">
@@ -205,10 +207,104 @@ Find the codes [here](codes/occupancy_grid_mapping/main.cpp)
 
 So far, we’ve coded the Occupancy Grid Mapping algorithm in C++ and generated an occupancy grid map 2D vector. Now, we'll code a visualization function that will loop through each cell. Then, we'll differentiate between occupied, free, and unknown cells depending on their log odds value. And, finally, we'll plot each cell on a graph to generate the map.
 
-<To be completed>!!!!!!!!!!!!
+**Mapping Lab**
+
+- Clone the lab from Github:
+  
+```bash
+$ cd /home/workspace/
+$ git clone https://github.com/udacity/RoboND-OccupancyGridMappingAlgorithm
+```
+
+- Next, edit the `main.cpp`:
+
+```cpp
+void visualization()
+{
+    //TODO: Initialize a plot named Map of size 300x150
+
+    //TODO: Loop over the log odds values of the cells and plot each cell state. 
+    //Unkown state: green color, occupied state: black color, and free state: red color 
+
+    //TODO: Save the image and close the plot 
+}
+```
+
+Here are some helpful commands you can use to generate plots with the `matplotlib` library:
+
+- _Set Title_: `plt::title("Your Title");`
+- _Set Limits_: `plt::xlim(x-axis lower limit, x-axis upper limit );`
+- _Plot Data_: `plt::plot({ x-value }, { y-value }, "Color and Shape");`
+- _Save Plot_: `plt::save("File name and directory");`
+- _Close Plot_: `plt::clf();`
+
+Check out this [link](https://github.com/lava/matplotlib-cpp) for more information on the `matplotlib` C++ library. For information regarding the plot color and shape refer to the LineSpec and LineColor section of the [MATLAB documentation](https://www.mathworks.com/help/matlab/ref/plot.html?requestedDomain=true).
+
+- Then, compile the program:
+
+```bash
+$ cd RoboND-OccupancyGridMappingAlgorithm/
+$ rm -rf Images/* #Delete the folder content and not the folder itself!
+$ g++ main.cpp -o app -std=c++11 -I/usr/include/python2.7 -lpython2.7
+```
+
+- Finally run the program:
+
+```bash
+$ ./app
+```
+
+If you get a warning regarding the `matplotlib` library, just ignore it.
+
+Now, wait for the program to generate the map and store it in the `/home/workspace/RoboND-OccupancyGridMappingAlgorithm/Images` directory!
+
+**Map Legend**
+- Green: Unkown/Undiscovered zone
+- Red: Free zone
+- Black: Occupied zone
+
+<p align="center">
+<img src="img/generate-map.png" alt="drawing" width="500"/>
+</p>
 
 ## Multi Sensor Fusion
-<To be completed>!!!!!!!!!!!!
+So far, we've covered mapping with robots with only one sensor. However, mapping with combination of multiple sensors (e.g. LIDAR and RGBD) leads to more percise maps. But **how would combine the information from multiple sensors into a single map?** The best approach is to build separate maps based on each sensor and integrate them. We can combine the maps using the **De Morgan's Law**. To obtain the most likely map, we need to compute the **maximum value** of each cell. Another approach would be to perform a **null operation** between values of each cell. 
+
+<p align="center">
+<img src="img/sensor-fusion.png" alt="drawing" width="500"/>
+</p>
+
+Here is an implementation of sensor fusion in C++:
+
+```cpp
+#include <iostream>
+#include <math.h>
+using namespace std;
+
+const int mapWidth =  2;
+const int mapHeight = 2;
+
+void sensorFusion(double m1[][mapWidth], double m2[][mapWidth])
+{
+    for (int x = 0; x < mapHeight; x++) {
+        for (int y = 0; y < mapWidth; y++) {
+            double p = 1 - (1 - m1[x][y]) * (1 - m2[x][y]);
+            cout << p << " ";
+        }
+        cout << endl;
+    }
+}
+
+int main()
+{
+
+    double m1[mapHeight][mapWidth] = { { 0.9, 0.6 }, { 0.1, 0.5 } };
+    double m2[mapHeight][mapWidth] = { { 0.3, 0.4 }, { 0.4, 0.3 } };
+    sensorFusion(m1, m2);
+
+    return 0;
+}
+```
 
 ## Introduction to 3D Mapping
 So far, you’ve heard about two dimensional maps, describing a slice of the 3D world. In resource constrained systems, it can be very computationally expensive to build and maintain these maps. 3D representations are even more costly. That being said, robots live in the 3D world, and we want to represent that world and the 3D structures within it as accurately and reliably as possible. 3D mapping would give us the most reliable collision avoidance, and motion and path planning, especially for flying robots or mobile robots with manipulators.
@@ -222,6 +318,31 @@ An RGBD camera is a single visual camera combined with a laser rangefinder or in
 A single camera system is cheaper and smaller, but the software algorithms needed for monocular SLAM are much more complex. Depth cannot be directly inferred from the sensor data of a single image from a single camera. Instead, it is calculated by analysing data from a sequence of frames in a video.
 
 ## 3D Data Representation
+Probabilistic data representation can be used to accomodate for sensor noise and dynamic environment. It is important to be able to distinguish data that represents an area that is free space vs an area that is unknown or not yet mapped. This will enable the robot to plan an unobstructed path and build a complete map. 
+
+Memory on a mobile robot is typically a limited resource. So, memory efficiency is very important. 
+
+The map should also be accessible in the robot's main memory, while mapping a large area over a long period of time. To accomplish this, we need a data representation that compact, and allows for efficient updates and queries. 
+
+Some data representation of 3D environments that we'll learn about are [point clouds](https://en.wikipedia.org/wiki/Point_cloud), [voxels](https://en.wikipedia.org/wiki/Voxel) and [octrees](https://en.wikipedia.org/wiki/Octree). 
+
+The other two types are "elevation maps" and "multi-level surface maps".
+
+### Point Clouds
+The disadvantage of point cloud is that information only exists about where things are in the world. **The data is the same whether the space is unoccupied or unknown**. Point clouds also store a large amount of of measurement points and with each scan you need to allocate more memory. So, **they're not memory efficient**. 
+
+<p align="center">
+<img src="img/Point_cloud.gif" alt="drawing" width="300"/>
+</p>
+
+### Voxel
+A 3D voxel grid is a volumetric data representation using a grid of cubic volumes of equal sizes. This is a probabilistic representation so you can estimate whether the voxel grid is occupied, free, or unknown space. One **drawback** of a 3D voxel grid is that **the size of area must be known or approximated before measurement, which may not always be possible**. A **second drawback** is that the complete map must be allocated in memory, so **the overall memory requirement is high**.
+
+### Octree
+Octrees are a memory efficient tree based data representation. The trees can be dynamically expanded to different resolutions and different areas, where every voxel can be subdivided into eight voxel recursively. The size of the map doesn't need to be known beforehand because map volumes aren't initialized until you need to add new measurements. 
+
+Octrees have been used to adapt occupancy grid mapping from 2D to 3D, introducing probabilistic representation of occupied vs free space.
+
 See the [video](https://youtu.be/hvkGrM-jZXA) first.
 
 Some of the desired characteristics of an optimal representation:
@@ -238,6 +359,10 @@ Some of the desired characteristics of an optimal representation:
 
 In **multi-level surface (MLS)** map representations, each 2D cell stores “patches”, of which there can be multiple per cell. Each patch contains 3 key pieces of information - the height mean, the height variance, and the depth value. The height mean is the estimated height of the individual vertical area, also referred to as an interval. The uncertainty of the height is stored as the height variance, with the assumption that the error is represented by a Gaussian distribution. The depth value is defined by the difference between height of the surface patch and the height of the lowest measurement that is considered as belonging to that vertical object (ex the depth of the floor would be 0). Individual surfaces can be directly calculated, allowing the robot to deal with vertical and overhanging objects. This method also works very well with multi-level traversable surfaces, such as a bridge that you could travel over top of, or underneath, or a structure like a parking garage. An MLS map isn’t a volumetric representation, but a discretization in the vertical dimension. Unknown areas are not represented, and localization for this method is not straightforward.
 
-**Octomap** See [this video](https://youtu.be/9s9ibmsQ4lQ) for a brief explanation. Also check out their [Github page](https://octomap.github.io/) as well as the documentation on [ROS Wiki](http://wiki.ros.org/octomap).
+**Octomap** 
+
+The Octomap framework is an open-source C++ library and ROS package based on Octrees, and it can be used to generate volumetric 3D models. Octomap is not a 3D SLAM solution, it is a mapping framework and requires a pose estimate. It converts and integrates point clouds into 3D occupancy maps. Octomap uses a probabilistic occupancy estimation modeled as a recursive binary Bayes filter. It is a static state filter which assumes the environment doesn't change. Efficient updates are achieved using the log odds notation. Occupancy is represented volumetrically with modeling of free, occupied, and unmapped areas. Upper and lower bounds are placed on the log odds value of occupancy estimate. This policy limits the number of updates required to change the state of the voxel. Octomap supports multi-resolution map queries where the minimum voxel size determines the resolution. Tree pruning is also used to reduce redundant information between discrete occupancy states. Pruning is accomplished by defining a threshold probability that the voxel is occupied or free. Children that are identical to the parent in the tree can be pruned. Memory efficient representation is accomplished using a compression method that produces compact map files. Coherent map volumes are locally combined, including both mapped free areas and occupied space. 
+
+See [this video](https://youtu.be/9s9ibmsQ4lQ) for a brief explanation. Also check out their [Github page](https://octomap.github.io/) as well as the documentation on [ROS Wiki](http://wiki.ros.org/octomap).
 
 
