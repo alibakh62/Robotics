@@ -182,7 +182,7 @@ The main advantage of the FastSLAM algorithm is that it uses a particle filter a
 Yes, with the grid mapping algorithm you can model the environment using grid maps without predefining any landmark position. So by extending the FastSLAM algorithm to occupancy grid maps, you can now solve the SLAM problem in an arbitrary environment. While mapping a real-world environment, you will mostly be using mobile robots equipped with range sensors. You’ll then extend the FastSLAM algorithm and solve the SLAM problem in term of grid maps.
 
 <p align="center">
-<img src="img/grid-fast-slam-2.png" alt="drawing" width="500"/>
+<img src="img/grid-fast-slam-2.jpg" alt="drawing" width="500"/>
 </p>
 
 **Robot Trajectory**
