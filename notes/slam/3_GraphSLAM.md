@@ -437,7 +437,84 @@ For example, on the left, where loop closure is disabled, you'll see highlighted
 
 See the video [here](https://youtu.be/YpDVapcNaVw).
 
+## Visual Bag-of-Words
+In RTAB-Mapping, loop closure is detected using a bag-of-words approach. Bag-of-words is commonly used in vision-based mapping. A feature is a very specific characteristic of an image like a patch with a complex texture or a well-defined edge or corner. 
 
+In RATB-Map, the default method for extracting features from an image is called **Speeded Up Robust Features** or **SURF**. Each feature has a descriptor associated with it. A **feature descriptor** is a unique and robust representation of the pixels that make up a feature. In SURF, the point of interests where the feature is located is split into smaller square sub-regions. From these sub-regions, the pixel intensities in regions of regularly spaced sample points are calculated and compared. The differences between the sample points are used to categorize the sub-regions of the image. 
+
+Comparing feature descriptors directly is time consuming, so vocabulary is used for faster comparison. This is where similar features or synonyms are **clustered** together. The collection of these clusters represent the **vocabulary**. When a feature descriptor is mapped to one of the vocabulary, it is called **quantization**. At this point, the feature is now linked to a word that can be referred to as a visual word. **When all the features in an image are quantized, the image is now a bag-of-words**. 
+
+<p align="center">
+<img src="img/bow1.png" alt="drawing" width="600"/>
+</p>
+
+Each words keeps a link to images that it is associated with, making image retrieval more efficient over a large data set. To compare an image with our previous images, a matching score is given to all images containing the same words. Each word keeps track of whic images it has been seen in, so similar images can be found. This is called **inverted index**. If a word is seen in an image, the score of this image will increase. If an image shares many visual words with the query image, it will score higher. A **Bayesian filter is used to evaluate the scores**. This is the hypothesis that an image has been seen before. When the hypothesis reaches a predefined threshold H, a loop closure is detected. 
+
+<p align="center">
+<img src="img/bow2.png" alt="drawing" width="600"/>
+</p>
+
+See the video [here](https://youtu.be/7-T3Vo5bWnI).
+
+## RTAB-Map Memory Management
+
+!! ADD EXPLANATION HERE
+
+See the video [here](https://youtu.be/Cs4mO5y4xYY).
+
+RTAB-Map uses a memory management technique to limit the number of locations considered as candidates during loop closure detection. This technique is a key feature of RTAB-Map and allows for loop closure to be done in real time.
+
+The overall strategy is to keep the most recent and frequently observed locations in the robot’s **Working Memory (WM)**, and transfer the others into **Long-Term Memory (LTM)**.
+
+- When a new image is acquired, a new node is created in the **Short Term Memory (STM)**.
+- When creating a node, recall that features are extracted and compared to the vocabulary to find all of the words in the image, creating a bag-of-words for this node.
+- Nodes are assigned a weight in the STM based on how long the robot spent in the location - where a longer time means a higher weighting.
+- The STM has a fixed size of S. When STM reaches S nodes, the oldest node is moved to WM to be considered for loop closure detection.
+- Loop closure happens in the WM.
+- WM size depends on a fixed time limit T. When the time required to process new data reaches T, some nodes of graph are transferred from WM to LTM - as a result, WM size is kept nearly constant.
+- Oldest and less weighted nodes in WM are transferred to LTM before others, so WM is made up of nodes seen for longer periods of time.
+- LTM is not used for loop closure detection and graph optimization.
+- If loop closure is detected, neighbours in LTM of an old node can be transferred back to the WM (a process called retrieval).
+
+<p align="center">
+<img src="img/rtab-memory.png" alt="drawing" width="600"/>
+</p>
+
+## RTAB-Map Optimization and Output
+Here we will discuss graph and map optimization, as well as time complexity considerations.
+
+### Graph Optimization
+When a loop closure hypothesis is accepted, a new constraint is added to the map’s graph, then a graph optimizer minimizes the errors in the map. RTAB-Map supports 3 different graph optimizations: Tree-based network optimizer, or TORO, General Graph Optimization, or G2O and GTSAM (Smoothing and Mapping).
+
+All of these optimizations use node poses and link transformations as constraints. When a loop closure is detected, errors introduced by the odometry can be propagated to all links, correcting the map.
+
+Recall that Landmarks are used in the graph optimization process for other methods, whereas RTAB-Map doesn't use them. Only odometry constraints and loop closure constraints are optimized.
+
+You can see the impact of graph optimization in the comparison below.
+
+<p align="center">
+<img src="img/rtab-opt1.png" alt="drawing" width="600"/>
+</p>
+
+### Map assembly and Output
+The possible outputs of RTAB-Map are a 2d Occupancy grid map, 3d occupancy grid map (3d octomap), or a 3D point cloud.
+
+<p align="center">
+<img src="img/rtab-opt2.png" alt="drawing" width="600"/>
+</p>
+
+### Graph SLAM Complexity and the Complexity of RTAB-Map
+By providing constraints associated with how many nodes are processed for loop closure by memory management, the time complexity becomes constant in RTAB-Map.
+
+<p align="center">
+<img src="img/rtab-opt3.png" alt="drawing" width="600"/>
+</p>
+
+## Recep
+
+!! ADD EXPLANATION HERE
+
+See the video [here](https://youtu.be/PN6cQJA1N40).
 
 
 
