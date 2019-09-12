@@ -1,4 +1,14 @@
 # Localization in Robotics
+Localization is the challenge of determining your robot's pose in a mapped environment. We do this by implementing a probabilistic algorithm to filter noisy sensor measurements and track the robot's position and orientation. Robot's pose consists of its `X` and `Y` position coordinates within the room and its orientation, `theta`.
+
+There are four very popular localization algorithms. 
+
+- **Extended Kalman Filter (EKF):** the most common Gaussian filter that helps in estimating the state of non-linear models.
+- **Markov Localization:** which is a base filter localization algorithm. Markov maintains a probability distribution over the set of all possible positions and orientation the robot might be located at. 
+- **Grid Localization:** it is referred to as histogram filter since it's capable of estimating the robot's pose using grids.
+- **Monte Carlo Localization (MCL):** also known as **particle filter** because it estimates the robot's pose using particles. 
+
+Here, we'll be covering EKF and MCL algorithms. 
 
 See the video [here](https://youtu.be/AcZY7n8XPZo).
 
@@ -7,10 +17,24 @@ See the video [here](https://youtu.be/AcZY7n8XPZo).
 Textbook: [Probabilistic Robotics](http://www.probabilistic-robotics.org/) by Sebastian Thrun,‎ Wolfram Burgard,‎ and Dieter Fox.
 
 ## Localization Challenges
+There are **three different types of localization problems**. These problems are not all equal. The amount of information present and the nature of the environment that a robot is operating determine the difficulty of the localization task. 
+
+The easiest localization problem is called **Position Tracking**, also known as **Local Localization**. In this problem, the robot knows its initial pose and the localization challenge entails estimating the robot's pose as it moves out on the environment. This problem is not that trivial, since there is always some uncertainty in robot motion. However, the uncertainty is limited to regions surrounding the robot. 
+
+A more complicated localization challenge is called **Global Localization**. In this case, the robot's initial pose is unknown and the robot must determine its pose relative to the ground truth map. The amount of uncertainty in **Global Localization** is much greater than that in **Position Tracking**, making it a much more difficult problem. 
+
+The most challenging localization problem is the **Kidnapped Robot** problem. This problem is just like **Global Localization** except that the robot may be kidnapped at any time and moved to a new location on the map. Although, this is that common, but we can think of it as the worst possible case. _As a roboticist, one should always design robots to deal with the worst circumstances._
+
+It should be noted that localization algorithms are not free from error and there will instances of a robot miscalcualting where it is. The **Kidnapped Robot** problem teaches the robot to recover from such instances, and once again, correctly locate itself on a map. Doing so is critical to building robot's localization algorithms. 
 
 See the video [here](https://youtu.be/J_ggwD8zip0).
 
 ## Overview
+We're going to be covering the implementation of the two most common localization algoruthms. We'll be learning about **Kalman Filter**, a very robust algorithm for filtering noisy sensor data. We'll also talk about the limitations of KF and the variations (e.g. Extended KF) to overcome those limitations. We'll learn about **sensor fusion**, which is the process of combining data from multiple sensors to calculate the most accurate estimate of a measured value. We'll then use our knowledge and apply sensor fusion Extended Kalman Filter package with ROS to estimate the robot's pose. 
+
+We'll also learn about **Monte Carlo Localization**. MCL uses particle filters to track your robot pose and present many advantages over EKF. After learning MCL algorithm, we'll code in C++ to generate particles and localize our robot in a 2D map. And we'll also visualize how particles can estimate our robot's pose. 
+
+Finally, we'll build and customize our mobile robot in Gazebo. We'll be tracking the robot's pose while it navigates in a map using the adaptive Monte Carlo Localization package in ROS.
 
 See the video [here](https://youtu.be/NV1j739Tlw8).
 
