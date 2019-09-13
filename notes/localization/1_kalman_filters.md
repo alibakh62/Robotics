@@ -39,14 +39,18 @@ Finally, we'll build and customize our mobile robot in Gazebo. We'll be tracking
 See the video [here](https://youtu.be/NV1j739Tlw8).
 
 # Kalman Filters
-
 See the video [here](https://youtu.be/nA7tllSCpRA).
 
 ## What's a Kalman Filter?
+The Kalman filter is an estimation algorithm that is very prominent in controls. It's used to estimate the value of a variable in real time as the data is being collected. These variables can represent the position or velocity of a robot, or for example, the temperature of a process. The reason that the Kalman filter is so noteworthy is because it can take data with a lot of uncertainty or noise in the measurements, and provide a very accurate estimate of the real value, and it can do it fast. 
+
+Unlike other estimation algorithms, you don't need to wait for a lot of data to come in order to calculate an accurate estimate. In the most general level, KF is a continuous iteration of a **two-step process**. The **first step** is a **measurement update**. We use the recorded measurement to update our state. The **second step** is **state prediction**. We use the information that we have about the current state to predict what the future state will be. 
 
 See the video [here](https://youtu.be/Cd5KKT7PfdE).
 
 Another way of looking at a Kalman Filter is just like you’d look at any other filter. What does it take as an input, what does it filter out, and what important substance does it let through? The graphic below compares a household coffee filter, an engineering low-pass filter, and a Kalman filter.
+
+At the start, we use an **initial guess**. We continue to iterate through these two steps and it doesn't take many iterations for our estimate to converge on the real value. 
 
 <p align="center">
 <img src="img/kalman-filter.png" alt="drawing" width="600"/>
