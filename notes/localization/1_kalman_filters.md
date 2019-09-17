@@ -39,12 +39,13 @@ Finally, we'll build and customize our mobile robot in Gazebo. We'll be tracking
 See the video [here](https://youtu.be/NV1j739Tlw8).
 
 # Kalman Filters
+
 See the video [here](https://youtu.be/nA7tllSCpRA).
 
 ## What's a Kalman Filter?
-The Kalman filter is an estimation algorithm that is very prominent in controls. It's used to estimate the value of a variable in real time as the data is being collected. These variables can represent the position or velocity of a robot, or for example, the temperature of a process. The reason that the Kalman filter is so noteworthy is because it can take data with a lot of uncertainty or noise in the measurements, and provide a very accurate estimate of the real value, and it can do it fast. 
+The Kalman filter is an estimation algorithm that is **very prominent in controls**. **It's used to estimate the value of a variable in real time as the data is being collected**. This variable can represent the position or velocity of a robot, or for example, the temperature of a process. **The reason that the Kalman filter is so noteworthy is because it can take data with a lot of uncertainty or noise in the measurements, and provide a very accurate estimate of the real value, and it can do so fast**. Unlike other estimation algorithms, **you don't need to wait for a lot of data to come in in order to calculate an accurate estimate**. 
 
-Unlike other estimation algorithms, you don't need to wait for a lot of data to come in order to calculate an accurate estimate. In the most general level, KF is a continuous iteration of a **two-step process**. The **first step** is a **measurement update**. We use the recorded measurement to update our state. The **second step** is **state prediction**. We use the information that we have about the current state to predict what the future state will be. 
+In the most general level, KF is a continuous iteration of a **two-step process**. The **first step** is a **measurement update**. We use the recorded measurement to update our state. The **second step** is **state prediction**. We use the information that we have about the current state to predict what the future state will be. At the start, we use an initial guess. We continue to iterate through these two steps and it doesn't take many iteration to converge on real value. 
 
 See the video [here](https://youtu.be/Cd5KKT7PfdE).
 
@@ -57,18 +58,40 @@ At the start, we use an **initial guess**. We continue to iterate through these 
 </p>
 
 ## History
+The Kalman filter was invented by Rudolph Kalman at a very convenient time in American history. Soon after developing the algorithm, Kalman visited his acquaintance Stanley Schmit at his workplace in NASA and introduced the algorithm to NASA staff. At the time, NASA was struggling to apply existing algorithms to the nonlinear problem of trajectory estimation for the Apollo program. The hope was to launch a spacecraft into a trajectory around the moon. The challenge lay in being able to create something accurate enough to guide the spacecraft through very narrow corridors of space but also efficient enough to run on an onboard computer in the 1960s. At the time, computing power was very limited in both the onboard computer and the computer that was used for simulation and testing. Another challenge was that during the flight of the spacecraft measurements would be coming in at irregular time intervals. After some tweaks, the Kalman filter algorithm provided the Apollo mission with a navigational accuracy to successfully enter orbit around the moon. 
 
 See the video [here](https://youtu.be/K1PT5I5hro0).
 
 ## Applications
+Since its success with the Apollo program, the Kalman filter has become one of the most practical algorithms in the field of controls engineering. Today, the Kalman filter is applied in many different disciplines. Within **engineering** the Kalman filter is often used to estimate the state of a system when the measurements are noisy. For example, the fluid level in a tank, or position tracking of a mobile robot. Outside of engineering, the Kalman filter is very popular in the field of **economics**. For instance, to esimtate the exchange rate of a particular currency or the global domestic product (GDP). **Computer vision** is another big user of the Kalman filter for many different applications including feature tracking. 
 
 See the video [here](https://youtu.be/EIOqFwzB4j8).
 
 ## Variations
+There are three common types of Kalman filters:
+
+- **Standard Kalman filter (KF):** linear
+- **Extended Kalman filter (EKF):** nonlinear (more applicable in robotics)
+- **Unscented Kalman filter (UKF):** highly nonlinear (where EKF fail to converge)
 
 See the video [here](https://youtu.be/ldg7uIhA08k).
 
+Resources for UKF:
+
+- [UKF-Wikipedia](https://en.wikipedia.org/wiki/Kalman_filter#Unscented_Kalman_filter)
+- [UKF by Cyrill Stachniss, University of Freiburg](http://ais.informatik.uni-freiburg.de/teaching/ws12/mapping/pdf/slam05-ukf.pdf)
+
 ## Robot Uncertainty
+Before diving into KF, it's important to understand a few intercacies of robot operation that will context to why KF works the way it does. 
+
+**Motion Uncertainty**
+
+Let's explore two different robot worlds: the _ideal world_ and the _real world_. In both worlds, the robots know their starting positions. In the **ideal world**, the robot is instructed to move 10 meters forward. The robot proceeds to do so and stops precisely 10 meters from its starting position. The movement was error-free. The robot in the **real world** is also asked to move forward 10 meters. In the real world, however, there are few complexities that result in the robot's movement being imprecise. The robot may encounter imperfections in the terrain, experience wheel slip, or adversely affected by other factors in its environment. Upon completion of its movement, the robot may not be at the 10 meter mark precisely, but some distance ahead of or behind of its desired goal. This error will be different with every movement performed due to the randomness encountered in the environment. 
+
+We can think of as if there is normal distribution stopped position around the 10 meter mark for the robot in real world. The shape of the Gaussian is specific to the robot and environment it is operating in. For example, in less noisy environment (factory floor), the distribution will be narrower, whereas a more risky environment (like a rescue mission where robot can affected by many adverse effects like weather, unstable terrain, etc.), will have a wider Gaussian distribution. 
+
+**Sensor Uncertainty**
+But, the distribution of uncertainty is not the only problem here. If a robot were to continue to take blind movements one after the other, then its location would become less and less certain with every movement (the uncertainties stack up over time). **With all these uncertainties in motion, a robot needs a way to sense its own action. But, unfortunately, the sensory data is often uncertain, too**. Examples would be sensors to measure speed of the robot through sensor which will contain some amount of noise. 
 
 See the video [here](https://youtu.be/5NAb2iyu2uo).
 
