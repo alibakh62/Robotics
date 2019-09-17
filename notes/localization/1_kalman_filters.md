@@ -96,6 +96,9 @@ But, the distribution of uncertainty is not the only problem here. If a robot we
 See the video [here](https://youtu.be/5NAb2iyu2uo).
 
 ## Kalman Filter Advantage 
+Now that we know that both movements and sensory measurements are uncertain, how can the Kalman filter help us make better sense of our robot's current state? **The Kalman filter can very quickly develop a surprising accurate estimate of the true value of the variable being measured**. For instance, the robot's location in the one dimensional real world, in the previous example. **Unlike other algorithms that require a lot of data to make an estimate, the Kalman filter is able to do so after just a few sensor measurements**. It does so by using an initial guess and taking into account the expected uncertainty of a sensor or movement. 
+
+There is another advantageous application of the Kalman filter. Let's say that your robot is using GPS data to identify its location. Today's GPS measurements are only accurate to a few meters. It is possible that by using the GPS alone, you cannot obtain accurate enough estimate of your robot's location. However, if you use additional sensors onboard the robot, you may be able to combine measurements from all of them to obtain a more accurate estimate. This is called **sensor fusion**. Sensor fusion uses the Kalman filter to calculate a more accurate estimate using data from multiple sensors. Once again, Kalman filter takes into account the uncertainty of each sensor's measurements. So, whether it's making sense of noisy data from one sensor or from multiple. The Kalman filter is a very useful algorithm to learn. 
 
 See the video [here](https://youtu.be/thwTZvbzAgk).
 
@@ -169,6 +172,15 @@ int main()
 That’s right, the Kalman Filter treats all noise as unimodal Gaussian. In reality, that’s not the case. However, the algorithm is optimal if the noise is Gaussian. The term optimal expresses that the algorithm minimizes the mean square error of the estimated parameters.
 
 ## Designing 1D Kalman Filters
+Before we dive into designing a Kalman filter, let's make sure that we're on the same page when it comes to naming conventions. Since a robot is unable to sense the world around it with complete uncertainty, it holds an internal belief which is its best guess at the state of the environment, including itself. As mentioned before, a robot constraint to a plane can be described with three state variables: two coordinates `x` and `y` to identify its position and one angle `\theta` to identify its orientation. These are its state variables and we will denote a state the bold letter **`x`**. **States** may change over time so sometimes we will use a subscript to represent state `x` at time `t`. 
+
+Two steps are involved in the Kalman filter algorithm: **measurement update**, and **state prediction**. 
+
+**Measurement Update:** You know that a robot can perceive its environment using sensors which produces a **measurement**. This is denoted with the letter **`z`** and `z_t` represents measurement obtained at time `t`. Next, our control actions such as movement can change the state of our environment. **Control options** are denoted by **`u`** and `u_t` represents the change of state that occurred between time `t-1` and `t`. 
+
+We need to start Kalman filter cycle somewhere and this is usually with an initial estimate of the state. The estimate does not have to be accurate. It can be aweful guess and the Kalman filter will still manage to give us good results very quickly. 
+
+Then, we iterate between the measurement update where we gain knowledge about our environment and the state prediction which causes us to lose knowledge due to uncertainty of robot motion. 
 
 See the video [here](https://youtu.be/5YChifc8z1M).
 
@@ -179,15 +191,18 @@ See the video [here](https://youtu.be/5YChifc8z1M).
 </p>
 
 ## Measurement Update
+Let's begin our KF implementation with measurement update and et's use the previous example (mobile robot in real world moving 10 meters etc.) here. Let's assume that our robot has been roaming around for a while. However, we have an inkling that the robot's current position is near 20 meter mark. But we are not certain. So, the prior belief Gaussian has a rather wide probability distribution. 
+
+Next, the robot takes its first sensory measurement providing us with data to work with. The measurement data, **`z`**, is more certain. So, it'll have a narrower Gaussian with a mean of 30.
 
 See the video [here](https://youtu.be/OaLfGr8xx9Q).
+
+**Given our prior belief about the robot's state and the measurement that is collected, where do you think the robot's new belief will be?**
 
 - `μ`: Mean of the prior belief 
 - `σ^2`: Variance of the prior belief 
 - `ν`: Mean of the measurement 
 - `r^2`: Variance of the measurement
-
-**New Belief Quiz: Where do you think the robot's new belief will be?**
 
 <p align="center">
 <img src="img/quiz.png" alt="drawing" width="500"/>
@@ -274,6 +289,11 @@ I encourage you to think about what the posterior Gaussian would look like for t
 </p>
 
 ## State Prediction
+By implementing the measurement update, we've completed half of KF's iterative cycle. **State prediction** is the estimation that takes place after an inevitably uncertain motion. Continuing from previous section example and after taking into account the measurement, the posterior distribution was a Gaussian with a mean of 27.5 and a variance of 2.25. However, since we moved onto the state predictions step in the KF cycle, this Gaussian is now referred to as the **prior belief**. This is the robot's best estimate of its current location. 
+
+Next, the robot executes a command. "Move forward 7.5 meters." The result of this motion is a Gaussian distribution centered around 7.5 meters with a variance of 5 meters. 
+
+**Calculating the new estimate is as easy as adding the mean of the motion to the mean of the prior**. Similarly, **adding two variances together to produce the posterior Gaussian**. 
 
 See the video [here](https://youtu.be/mjBpoGmNaqU).
 
@@ -308,11 +328,12 @@ int main()
 }
 ```
 
-## Kalman Filter
+## 1D Kalman Filter
+So far we learned that the **measurement update** is a weighted sum of the prior belief and the measurement. The **state prediction** is the addition of the prior belief's mean and variance to the motion's mean and variance. 
+
+As long as measurement data is available, and the robot has motions to implement. Below, we write the code that will iteratively go through the available measurements and motions, and apply a measurement update or a state prediction to each one of them. 
 
 See the video [here](https://youtu.be/1nHSG4U_v2g).
-
-In the programming quiz below, write the code that will iteratively go through the available measurements and motions, and apply a measurement update or a state prediction to each one of them.
 
 ```cpp
 #include <iostream>
@@ -379,9 +400,7 @@ The image below depicts a two-dimensional Gaussian distribution.
 <img src="img/multivariate-gaussian.png" alt="drawing" width="400"/>
 </p>
 
-Let's dive into the details!
-
-See the video [here](https://youtu.be/ih69P0KJgII).
+For more details on multivariate Gaussian see [this video](https://youtu.be/ih69P0KJgII).
 
 ### Formulas for the Multivariate Gaussian
 
@@ -416,6 +435,18 @@ Below is the formula for the multivariate Gaussian. Note that `x` and `μ` are v
 If D=1, the formula simplifies to the formula for the one-dimensional Gaussian that you have seen before.
 
 ## Intro to Multi-dimensional KF
+In our multi-dimensional examples, the system state was represented by one variable. In _N-dimensional_ systems, the state is a vector with **N** state variables. If we are to explore a two dimensional example, these two state variables could be the `x` and `y` positions of a robot. Or, if you're looking for a more interesting example, it could be the position and velocity of a robot. 
+
+This leads right into another important matter. **When working in one dimension, your state has to be observable, meaning that it had to be something that can be measured directly. In multi-dimensional states, there may exist hidden state variables, ones that you cannot measure with the sensors available**. However, you may be able to infer value from other states and measurements. 
+
+In the 2D example of position and velocity, the **location of the robot is observable while its velocity is not, making it a hidden state variable**. However, a robot's position and velocity over time are linked through a very simple formula (see below).
+
+<p align="center">
+<img src="img/state-trans.png" alt="drawing" width="150"/>
+</p>
+
+
+
 See the video [here](https://youtu.be/9Xb5WavDqKE).
 
 ## Design of Multi-Dimensional Kalman Filters
