@@ -445,6 +445,33 @@ In the 2D example of position and velocity, the **location of the robot is obser
 <img src="img/state-trans.png" alt="drawing" width="150"/>
 </p>
 
+If initially, the position of the robot is known but its velocity is not. The estimate of the robot's state will be a Gaussian that is very narrow in the `x` dimension, representing confidence about the robot's location, and very wide in the `x_dot` dimension, since the robot's velocity is completely unknown. (see the figure below)
+
+<p align="center">
+<img src="img/multi-kf1.png" alt="drawing" width="500"/>
+</p>
+
+Next, a state prediction can be calculated. **Knowing the relationship between the hidden variable and observable variable is key here**. Let's assume that one iteration of the Kalman filter takes 1 second. Now, using the formula, we can calculate the posterior state for each possible velocity. For instance, if the velocity is zero, the posterior state would be identical to the prior and if the velocity is one, the posterior will move, and so forth. From this, we can draw a posterior Gaussian that looks like image below,
+
+<p align="center">
+<img src="img/multi-kf3.png" alt="drawing" width="500"/>
+</p>
+
+However, it doesn't tell us anything about the velocity. It just graphs the correlation between the velocity and the location of the robot. However, what we do next, is a **measurement update**. The initial belief was useful to calculate state prediction but has no additional value and the result of state prediction can be called a **prior belief** for our measurement update. 
+
+Let's say that the new measurement suggests a location of `x = 50`.  Now, if we apply the measurement update to our prior, we will have a very small posterior centered around `x = 50` and `x_dot = 15`. (see the image below)
+
+<p align="center">
+<img src="img/multi-kf4.png" alt="drawing" width="500"/>
+</p>
+
+This is the very similar measurement update in 1D case. The posterior belief is the sume of the prior belief and the measurement, which is more confident that either the prior or the measurement.  
+
+<p align="center">
+<img src="img/multi-kf5.png" alt="drawing" width="500"/>
+</p>
+
+Then, the relationship between the two dimensions narrows down the posterior for the `x_dot` axis. After all, if the robot moved from `x = 35` to `x = 50` in one second, the speed should be trivial to calculate. And so it seems that two iterations of the Kalman filter cycle were enough to infer the robot's velocity. Continuing iterating through the measurement update and state prediction steps will update the robot's internal state to keep it aligned with where it is in the real world. 
 
 
 See the video [here](https://youtu.be/9Xb5WavDqKE).
@@ -551,9 +578,9 @@ Next, we calculate the Kalman Gain, K. As you will see in the next equation, the
 <img src="img/kl-gain.png" alt="drawing" width="150"/>
 </p>
 
-These equations may look complicated and intimidating, but they do nothing more than calculate an average factor. Let’s work through a quick example to gain a better understanding of this. Feel free to pause the video and follow along in your own notebook!
+These equations may look complicated and intimidating, but they do nothing more than calculate an average factor. 
 
-See the video [here](https://youtu.be/K-FobmdRMtI).
+See the video [here](https://youtu.be/K-FobmdRMtI), for a thorough explanation of how the equations are derived.
 
 The last step in the Kalman Filter is to update the new state’s covariance using the Kalman Gain.
 
@@ -566,11 +593,27 @@ These are the equations that implement the Kalman Filter in multiple dimensions.
 
 **State Prediction:**
 
+<p align="center">
+<img src="img/eq1.png" alt="drawing" width="150"/>
+</p>
+
 **Measurement Update:**
+
+<p align="center">
+<img src="img/eq2.png" alt="drawing" width="150"/>
+</p>
 
 **Calculation of Kalman Gain:**
 
+<p align="center">
+<img src="img/eq3.png" alt="drawing" width="150"/>
+</p>
+
 **Calculation of Posterior State and Covariance:**
+
+<p align="center">
+<img src="img/eq4.png" alt="drawing" width="180"/>
+</p>
 
 The Kalman Filter can successfully recover from inaccurate initial estimates, but it is very important to estimate the noise parameters, Q and R, as accurately as possible - as they are used to determine which of the estimate or the measurement to believe more.
 
@@ -656,6 +699,36 @@ int main()
 ```
 
 ## Introduction to the Extended Kalman Filter
+The assumptions under which the Kalman filter operates are:
+
+- Motion and measurement functions are **linear**,
+- State space can be represented by a unimodal Gaussian distribution. 
+
+It turns out that **these assumptions are very limiting**, and would only suffice for very primitive robots. **Most mobile robots will execute non-linear motions**. For example, moving in a circle or following a curve. 
+
+So, _what can we do if our Kalman filter can't be applied to most robotics problems?_
+
+First, let's understand **why we can't apply the Kalman filter** in more detail and maybe we'll find answers there. 
+
+Let's consider a prior distribution which is a unimodal Gaussian distribution with a mean of `mu` and the variance of `sigma^2`. When this distribution undergoes a linear transformation, for instance `y=ax+b`, the resulting posterior distribution is another Gaussian distribution with a mean of `a*mu + b` and a variance of `a^2 * sigma^2`. This is precisely what can happen in a state prediction. The **important thing** to note is that **a linear transformation that takes a Gaussian as input, will always have a Gaussian as output**. 
+
+**What happens if the transformation is non-linear?**
+
+Let's assume the same unimodal Gaussian distribution of previous example. But now, let's assume the transformation function is a non-linear function, say `atan(x)`. **The resulting distribution is no longer a Gaussian**. **In fact, the distribution cannot be computed in closed form, instead, to model this distribution many thousands of samples must be collected according to the prior distribution and pass through the function to create the posterior distribution**. What used to be simple algebra or matrix manipulation has become much more computationally intensive which is not the responsiveness that the Kalman filter is known for. 
+
+**So, what can we do?**
+
+For small section of the function, we can use linear approximation. If it's centered on the best estimate, the mean and updated with every step, it turns out that it can produce sufficiently accurate results. **The mean can continue to be updated with a non-linear function, but the covariance must be updated by a linearization of the function `f(x)`**. 
+
+To calculate the **local linear approximation**, a **Taylor series** can be of help. A function can be represented by the sum of an **infinite** number of terms as represented in the Taylor series formula. However, **an infinite number of terms is not needed**. **An approximation can be obtained by using just a few of the terms**. **A linear approximation can be obtained by using just the first two terms of the Taylor series**. **This linear approximation centered around the mean, will be used to update the covariance matrix of the prior state Gaussian**. 
+
+By applying the linear approximation, we'll again be able to get Gaussain output, however, it will inevitably have an error. **The tradeoff is in the simplicity and speed of the calculation**.
+
+To recap the differences between KF and EKF:
+
+- Either the state transformation function, measurement function, or both are non-linear.
+- These non-linear functions can be used to update the mean, but not the variance, as this would result in a non-Gaussian distribution.
+- For this reason, locally linear approximations are calculated and used to update the variance. 
 
 See the video [here](https://youtu.be/dwpKthaQ6ts).
 
