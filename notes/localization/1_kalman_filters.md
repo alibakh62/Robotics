@@ -797,3 +797,174 @@ The rows correspond to the dimensions of the function, f, and the columns relate
 
 The Jacobian is a generalization of the 1-dimensional case. In a 1-dimensional case, the Jacobian would have df/dx as its only term.
 
+### Example Application
+This will make more sense in context, so let’s look at a specific example. Let’s say that we are tracking the x-y coordinate of an object. This is to say that our state is a vector x, with state variables x and y.
+
+<p align="center">
+<img src="img/ex1.png" alt="drawing" width="100"/>
+</p>
+
+However, our sensor does not allow us to measure the x and y coordinates of the object directly. Instead, our sensor measures the distance from the robot to the object, `r`, as well as the angle between r and the x-axis, `θ`.
+
+<p align="center">
+<img src="img/ex2.png" alt="drawing" width="100"/>
+</p>
+
+It is important to notice that our state is using a Cartesian representation of the world, while the measurements are in a polar representation. How will this affect our measurement function?
+
+Our measurement function maps the state to the observation, as so,
+
+<p align="center">
+<img src="img/ex3.png" alt="drawing" width="200"/>
+</p>
+
+Thus, our measurement function must map from Cartesian to polar coordinates. But there is no matrix, `H`, that will successfully make this conversion, as the relationship between Cartesian and polar coordinates is nonlinear.
+
+<p align="center">
+<img src="img/ex4.png" alt="drawing" width="150"/>
+</p>
+
+For this reason, instead of using the measurement residual equation
+
+<p align="center">
+<img src="img/meas-update2.png" alt="drawing" width="150"/>
+</p>
+
+the mapping must be made with a dedicated function, `h(x')`.
+
+<p align="center">
+<img src="img/ex5.png" alt="drawing" width="200"/>
+</p>
+
+Then the measurement residual equation becomes
+
+<p align="center">
+<img src="img/ex7.png" alt="drawing" width="300"/>
+</p>
+
+The Jacobian, `Df(mu)`,  is defined below. But let's call it H since it's the linearization of our measurement function, `h(x)`.
+
+<p align="center">
+<img src="img/ex8.png" alt="drawing" width="200"/>
+</p>
+
+If you were to compute each of those partial derivatives, the matrix would reduce to the following,
+
+<p align="center">
+<img src="img/ex9.png" alt="drawing" width="250"/>
+</p>
+
+It's this matrix, `H`, that can then be used to update the state's covariance.
+
+To summarize the flow of calculations for the Extended Kalman Filter, it's worth revisiting the equations to see what has changed and what has remained the same.
+
+### Extended Kalman Filter Equations
+These are the equations that implement the Extended Kalman Filter - you'll notice that most of them remain the same, with a few changes highlighted in red.
+
+**State Prediction**
+
+<p align="center">
+<img src="img/ex10.png" alt="drawing" width="250"/>
+</p>
+
+**Measurement Update**
+
+<p align="center">
+<img src="img/ex11.png" alt="drawing" width="300"/>
+</p>
+
+**Calculation of Kalman Gain**
+
+<p align="center">
+<img src="img/ex12.png" alt="drawing" width="150"/>
+</p>
+
+**Calculation of Posterior State and Covariance**
+
+<p align="center">
+<img src="img/ex13.png" alt="drawing" width="180"/>
+</p>
+
+Highlighted in blue are the Jacobians that replaced the measurement and state transition functions.
+
+The Extended Kalman Filter requires us to calculate the Jacobian of a nonlinear function as part of every single iteration, since the mean (which is the point that we linearize about) is updated.
+
+### Summary
+Here are the key take-aways about Extended Kalman Filters:
+
+- The Kalman Filter cannot be used when the measurement and/or state transition functions are nonlinear, since this would result in a non-Gaussian distribution.
+- Instead, we take a local linear approximation and use this approximation to update the covariance of the estimate. The linear approximation is made using the first terms of the Taylor Series, which includes the first derivative of the function.
+- In the multi-dimensional case, taking the first derivative isn't as easy as there are multiple state variables and multiple dimensions. Here we employ a Jacobian, which is a matrix of partial derivatives, containing the partial derivative of each dimension with respect to each state variable.
+
+While it's important to understand the underlying math to employ the Kalman Filter, don't feel the need to memorize these equations. Chances are, whatever software package or programming language you're working with will have libraries that allow you to apply the Kalman Filter, or at the very least perform linear algebra calculations (such as matrix multiplication and calculating the Jacobian).
+
+## EKF Example
+Let's look at another example of a vehicle taking measurements - this time, a quadrotor! This quadrotor is a bit simplified - it's motion is constrained to the y-axis. Therefore, it's state can be defined by the following vector,
+
+<p align="center">
+<img src="img/ex14.png" alt="drawing" width="120"/>
+</p>
+
+that is: its roll angle, its velocity, and its position.
+
+Imagine you have a quadrotor, such as the one in the image below. This quadrotor would like to know the distance between it and the wall. This is an important measurement to have if the quadrotor would like to traverse the inside of a room, or outside of a building, while maintaining a safe distance from the wall.
+
+To estimate this distance, the quadrotor is equipped with a range finger.
+
+<p align="center">
+<img src="img/ekf-example-1.png" alt="drawing" width="500"/>
+</p>
+
+Shown in blue, are the true distances from an arbitrary point on the left to the quadrotor, and to the wall.
+
+**In the quadrotor's current configuration, what would you expect it's measurement to the wall to be?**
+
+`h(x) = wall - y`
+
+That's right - while the quadrotor is hovering perpendicular to the wall, the measurement, `h(x)`, is equal to `wall - y`.
+
+Now, what would happen if the quadrotor were to roll to some angle `ϕ`? What is a more general equation for the measurement that takes into account the roll angle?
+
+<p align="center">
+<img src="img/ekf-example-2.png" alt="drawing" width="500"/>
+</p>
+
+**What is the equation for the measurement when the quadrotor has a roll angle of `ϕ`?**
+
+`h(x) = (wall - y)/cosϕ`
+
+Applying some basic trigonometry, we've now determined the measurement model for this quadrotor's range finder.
+
+<p align="center">
+<img src="img/ex15.png" alt="drawing" width="200"/>
+</p>
+
+The function has a cosine in it's denominator, making this function non-linear. This means that we will need to use the Extended Kalman Filter for our estimation, and in the process, linearize the function.
+
+### Calculating `H`
+To apply the Extended Kalman Filter, we will need to calculate H, the Jacobian of the measurement model that we defined above. This won't be too strenuous since the measurement function is a 1x1 matrix.
+
+**Without calculating the partial derivatives, which of the following is the correct Jacobian for the measurement model?**
+
+<p align="center">
+<img src="img/ex16.png" alt="drawing" width="500"/>
+</p>
+
+Calculating the three partial derivatives will result in the following,
+
+<p align="center">
+<img src="img/ex17.png" alt="drawing" width="200"/>
+</p>
+
+When implementing the Extended Kalman Filter in code, there are software libraries that can take the partial derivative of a function, simplifying your implementation. There are, of course, also EKF implementations readily available too. However, it's _always_ helpful to understand the inner workings of an algorithm and apply it intelligently to the problem at hand.
+
+After calculating `H`,
+
+<p align="center">
+<img src="img/ex18.png" alt="drawing" width="300"/>
+</p>
+
+it can be used in the EKF equations to update the covariance of the state.
+
+
+
