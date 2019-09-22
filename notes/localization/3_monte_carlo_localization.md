@@ -131,3 +131,33 @@ Moving onto the second section of the MCL where a sampling process happens. Here
 
 Finally, the algorithm outputs the new belief and another cycle of iteration starts implementing the next motion by reading the new sensor measurements. 
 
+# MCL in Action
+Let's try to apply MCL to a one-dimensional hallway. In this hallway, the mobile robot can move upward and downward. Also, the robot is capable of collecting all the battery information and sensing the presence of doors. Initially, at time `t=1`, particles are drawn randomly and uniformly over the entire post space. Then, at time `t=2`, the robot senses a door and MCL assigns weights to each particle. The number of particles remains constant, whereas the particles' weights are adjusted. Now, at `t=3`, the robot moves down the hallway and the particle set is shifted. The new set has uniform importance weight and the high number of particles near the three likely places. Moving on, at `t=4`, the robot senses another door and the new measurement assigns non-uniform importance weight to the particle set. Finally, at time `t=5`, the robot keeps moving down the hallway causing a new particle set to generate. 
+
+<p align="center">
+<img src="img/mcl-in-action1.png" alt="drawing" width="500"/>
+</p>
+
+**At time:**
+
+- **t=1**, Particles are drawn randomly and uniformly over the entire pose space.
+- **t=2**, Measurement is updated and an importance weight is assigned to each particle.
+- **t=3**, Motion is updated and a new particle set with uniform weights and high number of particles around the three most likely places is obtained in resampling.
+- **t=4**, Measurement assigns non-uniform weight to the particle set.
+- **t=5**, Motion is updated and a new resampling step is about to start.
+
+**EKF**
+
+<p align="center">
+<img src="img/mcl-in-action2.png" alt="drawing" width="500"/>
+</p>
+
+**At time:**
+
+- **t=1**, Initial belief represented by a Gaussian distribution around the first door.
+- **t=2**, Motion is updated and the new belief is represented by a shifted Gaussian of increased weight.
+- **t=3**, Measurement is updated and the robot is more certain of its location. The new posterior is represented by a Gaussian with a small variance.
+- **t=4**, Motion is updated and the uncertainty increases.
+
+See the video [here](https://youtu.be/VgEGrvgty_k).
+
