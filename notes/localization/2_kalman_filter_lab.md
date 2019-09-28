@@ -1,4 +1,7 @@
 # Introduction
+
+(Access this [link](https://github.com/udacity/RoboND-EKFLab) and grab the lab from GitHub)
+
 Here, we want to use the power of ROS and implement an EKF package. 
 
 In this lab, we've controlled a robot inside a simulator and you collect sensitive information from the robots inertial measurement unit, rotary encoders and vision sensors. 
@@ -210,6 +213,185 @@ $ rosrun rqt_graph rqt_graph
 <p align="center">
 <img src="img/rqt-graph.png" alt="drawing" width="600"/>
 </p>
+
+# Turtlebot Teleop Package
+We're still unable to generate the filtered and unfiltered trajectories since the robot is static. Currently, the trajectories are appending zero values. The robot is performing only a sensor update without any motion update. Therefore, we'll have to drive the robot in the environment as it collects sensory information. With the `turtlebot` package we can publish driving commands to the robot. You'll be able to control the robot with either keyboard or joystick commands. 
+
+Now, let's have a closer look at the properties of this package and its nodes. The **`turtlebot_teleop`** node has no subcribers and only publishes control commands. Now, we need to integrate this package with the turtlebot Gazebo package. As you can see in the picture below, the control topics of both nodes in the two packages perfectly match each other. Here, you can see the final result of integrating the four packages. You can drive the robot with the `turtlebot_teleop` package and generate filtered and unfiltered trajectories.
+
+<p align="center">
+<img src="img/teleop1.png" alt="drawing" width="600"/>
+</p>
+
+Now, we can launch the node and drive the robot in the Gazebo environment. To do so:
+
+**Clone the Package:**
+
+```bash
+$ cd /home/workspace/catkin_ws/src
+$ git clone https://github.com/turtlebot/turtlebot
+```
+
+**Install the Dependencies:**
+
+```bash
+$ cd /home/workspace/catkin_ws
+$ source devel/setup.bash
+$ rosdep -i install turtlebot_teleop
+```
+
+**Build the Package:**
+
+```bash
+$ catkin_make
+$ source devel/setup.bash
+```
+
+**Launch the Nodes:**
+
+```bash
+$ roslaunch turtlebot_teleop keyboard_teleop.launch
+```
+
+#### Teleop package
+Access this [link](http://wiki.ros.org/turtlebot_teleop) and go through the `turtlebot_teleop` documentation.
+
+See the video [here](https://youtu.be/zoM5A9PN6VA).
+
+# Rviz Package
+So far, we itengrated four packages, successfully drove the robot, and published filtered and unfiltered trajectories. Now, it's time to subscribe these topics into `Rviz` and visualize the robot's path as we control it. To do so, follow the steps below:
+
+**Launch `rviz`:**
+
+```bash
+$ rosrun rviz rviz
+```
+
+**Edit the rviz configuration:**
+
+1. Change the **Fixed Frame** to `base_footprint`
+2. Change the **Reference Frame** to `odom`
+3. Add a `RobotModel`
+4. Add a `camera` and select the `/camera/rgb/image_raw` **topic**
+5. Add a `/ekfpath` **topic** and change the **display name** to `EKFPath`
+6. Add a `/odompath` **topic** and change the **display name** to `OdomPath`
+7. Change the `OdomPath` **color** to `red:255;0;0`
+
+**Save the `rviz` configuration:**
+
+Save the rviz configuration in `/home/workspace/catkin_ws/src` as `EKFLab.rviz`
+
+**Now, kill the `rviz` terminal!**
+
+**Relaunch `rviz`:**
+
+```bash
+$ rosrun rviz rviz -d /home/workspace/catkin_ws/src/EKFLab.rviz
+```
+
+### How to create a `rviz` launch file?
+
+**The `RvizLaunch.launch` file:**
+
+```bash
+<launch>
+  <!--RVIZ-->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d /home/workspace/catkin_ws/src/EKFLab.rviz"/>
+</launch>
+```
+
+**Launch `Rvizlaunch.launch`:**
+
+```bash
+$ cd /home/workspace/catkin_ws/src
+$ roslaunch RvizLaunch.launch
+```
+
+See the video [here](https://youtu.be/b3_kNyi7KLY).
+
+# Main Launch
+Up until now, we worked with five different packages, each with its unqiue launch file. We had to open five different terminals, source the ROS environment multiple times and lancu each file. This is tedious and error prone. It even gets worse in large projects with more than 20 launch files. So, here we want to create a **main package**. Inside the main package, create a launch directory and store a main launch file (`main.launch`). The main launch file will contain the nodes of all the packages we worked with so far. After writing the main launch file, open a terminal and launch it. 
+
+<p align="center">
+<img src="img/main-launch.png" alt="drawing" width="600"/>
+</p>
+
+**Create a `main package`:**
+
+```bash
+$ cd /home/workspace/catkin_ws/src
+$ catkin_create_pkg main
+```
+
+**Build the package:**
+
+```bash
+$ cd /home/workspace/catkin_ws
+$ catkin_make
+```
+
+**Create and edit the `main.launch` file:**
+
+```bash
+$ cd /home/workspace/catkin_ws/src/main
+$ mkdir launch
+$ cd launch 
+$ gedit main.launch
+```
+
+Copy the `main.launch` file from [GitHub](https://github.com/udacity/RoboND-EKFLab/blob/master/main/launch/main.launch)
+
+**Launch the `main.launch` file:**
+
+```bash
+$ cd /home/workspace/catkin_ws/
+$ source devel/setup.bash
+$ roslaunch main main.launch
+```
+
+See the video [here](https://youtu.be/dh1PlulCxtA).
+
+# Rqt Multiplot
+So far, you've controlled the robot and generated the filtered and unfiltered trajectories. Also, you saw how EKF can estimate the pose of the robot. But, we are still unable to quantitatively visualize how close th filter path is from the unfiltered one. 
+
+To do this, you can use the `rqt_plot` which is a great ROS package to graph the values echoed by different topics. Using `rqt_plot`, you can graph the filtered and unfiltered robot poses. But, `rqt_plot` can only generate graphs with respect to time. So, it can be used to plot the `Y` position of our robot vs its `X` position. In this lab, you will use the **`rqt_multiplot`** since you can define both the `Y` and `X` axis when generating the graphs. **`rqt _multiplot`** is not installed by default on your system. See the instructions below to install and run the package.
+
+#### Instructions for _Installing_ and _Running_ the `rqt_multiplot` ROS plugin
+
+**Open a new terminal and install the `rqt_multiplot`:**
+
+```bash
+$ apt-get install ros-kinetic-rqt -y
+$ apt-get install ros-kinetic-rqt-multiplot -y
+$ apt-get install libqwt-dev -y
+$ rm -rf ~/.config/ros.org/rqt_gui.ini
+```
+
+**Run the rqt_plot package node:**
+
+```bash
+$ rosrun rqt_multiplot rqt_multiplot
+```
+
+**GitHub documentation:**
+
+Access this [link](https://github.com/ethz-asl/rqt_multiplot_plugin) and go through the `rqt_multiplot` ROS plugin documentation.
+
+
+- After installing the package, in `rqt_multiplot` select the **Configure plot** settings. Let's give a **title** to our plot as `RobotYPosvsXPos`. 
+- Now, define the unfiltered and filtered curve. Start with the _unfiltered curve_. Select **Add a Curve** and then give it a title as `UnfilteredYPosvsXPos`. In **X-Aixs**, select the `/odom` as topic. Since we're plotting Y vs X, select the Y `/odom` topic in the **Y-Axis**. 
+- Keep the **color** as red since we chose the red color for the unfiltered trajectory earlier. 
+- Now, follow the same steps and define the _filtered curve_. (change the **color** to green).
+
+After that, press **Play** and start driving the robot around. Now, you can quantitatively visualize how close the filtered path is from the unfiltered one and how your EKF is filtering the uncertainties and estimating the pose of the robot. 
+
+Keep playing around with the `rqt_plot` and graph the orientation of the robot.
+
+See the video [here](https://youtu.be/ZEpVMvXC6jQ).
+
+
+
+
 
 
 
