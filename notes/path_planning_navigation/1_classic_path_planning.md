@@ -616,7 +616,7 @@ The **generality** of an algorithm considers the type of problems that the algor
 
 Keep these concepts in mind as you learn about each search algorithm. Let’s dive into the algorithms!
 
-# Breadth-First Search
+# Breadth-First Search (BFS)
 One of the simplest types of search is called breadth-first search (or BFS). It has its name because the algorithm searches a space broadly before it search deeply. Let's look at a the search tree below.
 
 <p align="center">
@@ -637,4 +637,83 @@ Here's the search tree with all of its values filled in. As you can see, the BFS
 <img src="img/bfs3.png" alt="drawing" width="600"/>
 </p>
 
-**BFS is an uninformed search algorithm**. This means that it searches blindly without any knowledge of the space it's traversing or where the goal may be. For this reason, it isn't the most efficient in its operation.  
+**BFS is an uninformed search algorithm**. This means that it searches blindly without any knowledge of the space it's traversing or where the goal may be. For this reason, it isn't the most efficient in its operation. For this reason, it isn't the most efficient in its operation. 
+
+Let's look at a more complicated example. Below is a discretized map of an environment. The robot starts off at the 'S' location (blue cell) in the middle of the open space and would like to find a path to its goal location marked in green. 
+
+<p align="center">
+<img src="img/bfs4.png" alt="drawing" width="200"/>
+</p>
+
+Let's assume that the space is four connected, meaning that the robot can move up, right, down, or left, but not diagonally. Thus, from a start location, the robot has four options for where to explore next. We can't expect all four at once. So, we're going to add each of these options to something called the **frontier**. The **frontier** is the collection of all nodes that we have seen but not yet explored. When the time comes, each of these nodes will be removed from the frontier and explored. 
+
+Before we add these nodes to the frontier, let's set a standard. In our examples, we will _**break ties**_ in the following manner. When we have new nodes to add to the frontier, we will choose the add the top node first, then the one on the right, then the left, and if no other options are available, then the node directly below. Now, we can add four nodes to our frontier. 
+
+For BFS, the **data structure** underlying frontier is a **queue**. In a queue, the first element to enter will be the first to exit. So, we remove the first element from the frontier and explore that node. In this manner, we won't be always exploring the top node, but the first one in the queue (see the [video](https://youtu.be/Z_ZvAnyfUeE), minute 2 to 3). 
+
+Exploring in this fashion, you'll notice that the explored area radiates outward from the starting node. BFS searches broadly, visiting the closest nodes first. For this reason, it takes the algorithm a long time to travel a certain distance because it is radiating in all directions. Eventually, the algorithm will find the goal node. 
+
+<p align="center">
+<img src="img/bfs5.png" alt="drawing" width="200"/>
+</p>
+
+BFS is _**complete**_ because it will always find _a_ solution, and it is _**optimal**_ because it will always find the shortest solution (since it explores the shortest routes first), but it might take the algorithm a loooong time to find the solution. So the algorithm is _**not efficient**_!
+
+See the video 1 [here](https://youtu.be/5JUpzI75iuk).
+
+See the video 2 [here](https://youtu.be/Z_ZvAnyfUeE)
+
+# Depth-First Search (DFS)
+DFS is another **uninformed** search algorithm. Like the name suggests, DFS searches deep before it searches broadly. Going back to our search tree from BFS section, instead of commencing at the top node and searching level by level, DFS will explore the start node's first child and then that node's first child and so on until it hits the lowest leaf in a branch. Only then will DFS back up a node which had more than one child and explore this node's second child. 
+
+<p align="center">
+<img src="img/dfs1.png" alt="drawing" width="400"/>
+</p>
+
+After few steps of searching through the tree, the nodes would've been searched in this order:
+
+<p align="center">
+<img src="img/dfs2.png" alt="drawing" width="400"/>
+</p>
+
+Below, is the search tree with all of its values filled in.
+
+<p align="center">
+<img src="img/dfs3.png" alt="drawing" width="400"/>
+</p>
+
+Let's return to our discretized environment (from BFS section) to see how DFS would perform. Our start and goal nodes will remain the same and so will our rules for breaking ties. However, __**our frontier will change**_. 
+
+In **BFS**, we use the queue for our frontier which supported expanding the _oldest_ nodes first. In **DFS**, we wish to expand _newly_ visited nodes first. To accomodate this, the data structure underlying the frontier will be a stack and so the four nodes visible from the start location will be added to the frontier stack. They're ordered in a way that would have the node _above expanded before the right, left, or below nodes_. After adding these nodes, to the frontier, DFS would pop the top element off the stack and explore it next. And the process continues like that (See the [video](https://youtu.be/2_hHQBhD1n8), minute 1 to 2). 
+
+DFS is exploring deep on the upwards direction. Simply, because that's the way that ties are broken. The DFS algorithm continues searching and soon finds itself at the goal. 
+
+<p align="center">
+<img src="img/dfs4.png" alt="drawing" width="400"/>
+</p>
+
+Now, if we were to number the nodes in the order that they were explored, the goal would be number 5 (vs 29 in BFS). **Will that be always the case?** 
+
+No, it's certainly not guaranteed. Let's see what would happen if the goal node was placed in the bottom right instead (image below). It'd take DFS 30 moves to find the goal. In comparison, BFS would have found it in 29. 
+
+<p align="center">
+<img src="img/dfs5.png" alt="drawing" width="500"/>
+</p>
+
+Seems like neither of these algorithms are too efficient. 
+
+**DFS is neither complete, nor optimal, nor efficient.**
+
+See the video 1 [here](https://youtu.be/MxdxqfN1-P8).
+
+See the video 2 [here](https://youtu.be/2_hHQBhD1n8).
+
+# Uniform Cost Search (UCS)
+As we mentioned, **BFS is optimal** because it expands the shallowest unexplored node with every step. However, BFS is limited to graphs where all step costs are equal. **The UCS algorithm builds upon BFS to be able to search graphs with differing edge costs**.
+
+**UCS is also optimal** because it expands in order of increasing path cost. In certain environments, you can assign a cost to every edge. The cost may represent one of many things. For instance, the time it takes a robot to move from one node to another. A robot may have to slow down to turn corners or to move across rough terrain. The associated delay can be represented with a higher cost to that edge. 
+
+ 
+
+
+
