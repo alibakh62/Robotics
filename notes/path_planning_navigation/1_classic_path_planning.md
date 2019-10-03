@@ -713,7 +713,138 @@ As we mentioned, **BFS is optimal** because it expands the shallowest unexplored
 
 **UCS is also optimal** because it expands in order of increasing path cost. In certain environments, you can assign a cost to every edge. The cost may represent one of many things. For instance, the time it takes a robot to move from one node to another. A robot may have to slow down to turn corners or to move across rough terrain. The associated delay can be represented with a higher cost to that edge. 
 
+So far, every edge in our search tree has had the same cost. Now, let's add some costs to our search tree from previous section.
+
+<p align="center">
+<img src="img/ucs1.png" alt="drawing" width="500"/>
+</p>
+
+UCS explores nodes on the frontier starting with the node that has the lowest path cost. **Path cost** refers to the sum of all edge costs leading from the start to that node. For instance, the path costs of this node is just 2. But the path cost of this node is 2+3=5. If we start at the top of the search tree and explore the nodes, they are explored in the following manner. From the start node, we add two nodes to the frontier. One has a cost of 1 and the other, a cost of 2. Next, we explore the node with the lower path cost, the left node. This adds two more nodes to the frontier. One with the path cost of 3 and one with a cost of 2. Now, we've explored all available nodes with a path cost 1. So, next, let's look for nodes with a path cost of 2 and explore them. There's one to the right and another one. We continue exploring the nodes on the frontier with the lowest path costs. We'll explore all nodes with the path cost of 1, 2, 3, and 4. For the video explanation, see [here](https://youtu.be/27mdDguSqvM). 
+
+**If you are to expand the search to include all nodes with a path cost of 5, which of the following nodes will not be explored?**
+
+<p align="center">
+<img src="img/ucs2.png" alt="drawing" width="600"/>
+</p>
+
+Of all the nodes on the frontier, most would be explored with the exception of nodes B, D, and F, which all have a path cost of 6. They and a few other nodes would be explored in the following steps. 
+
+Now, let's consider a more complicated example. The below is a graph where each node is labeled with a letter A through N, and each edge has a cost. We'd like to apply UCS to find a path from the start node, E, to the goal node K. Recall that in the BFS, the frontier was represented by a queue. In DFS, the frontier was represented by a stack. Each accomodated the corresponding algorithms desired search order, **first-in first-out (FIFO)** or **last-in first-out (LIFO)**. In UCS, we wish to explore nodes with lowest path costs first. To accomodate this, we can use a **priority queue**, that is a queue that is organized by the path cost. 
  
+<p align="center">
+<img src="img/ucs3.png" alt="drawing" width="600"/>
+</p>
+
+- At the start, there are four nodes and their corresponding paths on the frontier. They're organized as such with nodes G and F at the top of the queue as they have the lowest path cost followed by nodes A and D. 
+- Next, we remove the top node from the frontier to explore it. As a result two more nodes are added to the frontier. They assume their appropriate positions in the prioritized queue. Node H has a path cost of 2+3=5, and node I has a path cost of 2+5=7. These are the shortest paths to these nodes that we are aware of at this time. 
+
+<p align="center">
+<img src="img/ucs4.png" alt="drawing" width="600"/>
+</p>
+
+- Next, we explore node F. In this process, node M is added to the queue and another interesting thing happens. The path cost of node I is reduced to 6. This is because a shorter route has been found to this node. 
+- The algorithm continues searching, exploring the node the frontier that has the lowest path cost. Adding new nodes to the frontier, and updating the path costs for a node if a shorter path has been found. After some time, the goal is found. It has a path cost of 9, following the path E, F, I, J, and K. 
+- See the video explanation [here](https://youtu.be/hrhu6VXEq6U).
+
+**NOTE:** Uniform Cost Search is _**complete**_ if every step cost is greater than some value, **`ϵ`** (otherwise, it can get stuck in infinite loops). And it’s also **optimal**. No uninformed search algorithm can be particularly efficient. They always search in all directions, as they have no information to lead them in the direction of their goal.
+
+# A* Search
+The algorithms that we've learned thus far have been _**uninformed**_. Their search was sprawled in all directions because they lacked any information regarding the whereabouts of the goal.
+
+**A* Search** is an _**informed**_ search. This means that it takes into account information about the goal's location as it goes about its search. **It does so by using a heuristic function**. A heuristic function, `h(n)`, represents the distance from a node to the goal. `h(n)` is only an _**estimate of the distance**_, as the only way to know the true distance would be to traverse the graph. However, even an estimate is beneficial as it steers a search in the appropriate direction. 
+
+A* uses more than just a heuristic function in the search strategy. It also takes into account the path cost, `g(n)`. A* chooses the path that minimize the sum of the path cost and the heuristic function. This sum is denoted by `f(n)` (`f(N) = h(n) + g(n)`). By doing so, it accomplishes two things at once; **minimizing `g(n)` favors shorter paths and minimizing `h(n)` favors paths in the direction of the goal**. **A* searches for the shortest path in the direction of the goal**. Let's go back to our graph from previous section to see A* in action.
+
+<p align="center">
+<img src="img/ucs3.png" alt="drawing" width="600"/>
+</p>
+
+The objective that we have is to find the shortest path from node E to node K. Let's try to search this graph once more, this time with the help of a heuristic to guide the algorithm to the goal. For two-dimensional graphs like the one above, a _valid heuristic_ would be the _**Euclidean distance**_ from a node to the goal. As you can see in the picture below, **nodes close to the goal have a low heuristic value and nodes further away from the goal have a higher heuristic value**. The goal itself has a heuristic value of 0. 
+
+<p align="center">
+<img src="img/as1.png" alt="drawing" width="600"/>
+</p>
+
+If we wanted to calculate `f(n)` for a node, we would add the path cost, `g(n)`, to the heuristic, `h(n)`. Now let's go through the algorithm steps.
+
+Just like the UCS, we will be using a priority queue for the frontier. For A* Search, we will order it `f(n)`. 
+
+- At the start, we have four nodes and their corresponding paths on the frontier. The path to node G has the lowest of `f(n)`, so we'll explore it first.
+- As new nodes are added to the frontier, they are inserted in the appropriate location in the priority queue based on `f(n)`. Once again, if a shorter route is found to a node, the path and the value of `f(n)` for that node will be updated. You can see this happening with node I in this step.
+
+<p align="center">
+<img src="img/as2.png" alt="drawing" width="600"/>
+</p>
+
+- The A* search continues. Unlike uniform cost search, you can see that A* search is directed towards the goal. The nodes on the left hand side of the graph have not been explored. However, A* will still explore what it believes to be promising sections like the dead end at node N.
+
+**NOTE:** Note that A* search took less steps to complete than UCS, as it used a heuristic value for each node to keep itself oriented toward the goal. 
+
+See the video explanation [here](https://youtu.be/i6OQJIFL9dA)
+
+- A heuristic function provides the robot with some sort of knowledge about the whereabouts of the goal.
+- A* orders the frontier by f(n), where f(n) = g(n) + h(n), the sum of the path-cost and the heuristic function.
+- A* and uniform cost search both implement the frontier using a priority queue. Whereas BFS & DFS implement the frontier with a queue and stack, respectively.
+- This one’s tricky! A* is **guaranteed to be optimal only if several conditions are met**.
+
+As you saw in the video above, A* search orders the frontier using a priority queue, ordered by f(n), the sum of the path cost and the heuristic function. This is very effective, as it requires the search to keep paths short, while moving towards the goal. However, as you may have discovered in the quiz - A* search is not guaranteed to be optimal. Let’s look at why this is so!
+
+A* search will find the optimal path if the following conditions are met,
+
+- Every edge must have a cost greater than some value, \epsilonϵ, otherwise, the search can get stuck in infinite loops and the search would not be complete.
+- The heuristic function must be consistent. This means that it must obey the triangle inequality theorem. That is, for three neighbouring points `(x1, x2, x3)`, the heuristic value for `x1` to `x3` must be less than the sum of the heuristic values for `x1` to `x2` and `x2` to `x3` .
+- The heuristic function must be admissible. This means that `h(n)` must always be less than or equal to the true cost of reaching the goal from every node. In other words, `h(n)` must never overestimate the true path cost.
+
+To understand where the admissibility clause comes from, take a look at the image below. Suppose you have two paths to a goal where one is optimal (the highlighted path), and one is not (the lower path). Both heuristics overestimate the path cost. From the start, you have four nodes on the frontier, but Node N would be expanded first because its `h(n)` is the lowest - it is equal to 62. From there, the goal node is added to the frontier - with a cost of 23 + 37 = 60. This node looks more promising than Node P, whose `h(n)` is equal to 63. In such a case, A* finds a path to the goal which is not optimal. If the heuristics never overestimated the true cost, this situation would not occur because Node P would look more promising than Node N and be explored first.
+
+<p align="center">
+<img src="img/as3.png" alt="drawing" width="600"/>
+</p>
+
+As you saw in the image above, admissibility is a requirement for A* to be optimal. For this reason, common heuristics include the Euclidean distance from a node to the goal (as you saw in the video), or in some applications the Manhattan distance. When comparing two different types of values - for instance, if the path cost is measured in hours, but the heuristic function is estimating distance - then you would need to determine a scaling parameter to be able to sum the two in a useful manner.
+
+If you are interested in learning more about heuristics, visit [Amit’s Heuristics Guide](http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html) on Stanford’s website.
+
+While A* is a much more efficient search in most situations, there will be environments where it will not outperform other search algorithms. This happens if the path to the goal happens to go in the opposite direction first.
+
+Variants of A* search exist - some accommodate the use of A* search in dynamic environments, while others help A* become more manageable in large environments.
+
+### Additional Resources
+The following visualization is a great tool that allows you to draw your own obstacles, set your own rules, and perform search using different algorithms.
+
+[Path Finding Visualization](https://qiao.github.io/PathFinding.js/visual/)
+
+For more information on A* variants, take a look at:
+[MovingAI A* Variants](http://movingai.com/astar-var.html)
+[Variants of A* - Stanford](http://theory.stanford.edu/~amitp/GameProgramming/Variations.html)
+
+Take some time to investigate the efficiency of A* over BFS in different scenarios! And if you're feeling extra adventurous, research some of the other algorithms that are provided in the simulation and compare their results to those of BFS & A*.
+
+# Overall Concerns Regarding Search
+
+### Bidirectional Search
+One way to improve a search’s efficiency is to conduct two searches simultaneously - one rooted at the start node, and another at the goal node. Once the two searches meet, a path exists between the start node and the goal node.
+
+The advantage with this approach is that the number of nodes that need to be expanded as part of the search is decreased. As you can see in the image below, the volume swept out by a unidirectional search is noticeably greater than the volume swept out by a bidirectional search for the same problem.
+
+### Path Proximity to Obstacles
+Another concern with the search of discretized spaces includes the proximity of the final path to obstacles or other hazards. When discretizing a space with methods such as cell decomposition, empty cells are not differentiated from one another. The optimal path will often lead the robot very close to obstacles. In certain scenarios this can be quite problematic, as it will increase the chance of collisions due to the uncertainty of robot localization. The optimal path may not be the best path. To avoid this, a map can be ‘smoothed’ prior to applying a search to it, marking cells near obstacles with a higher cost than free cells. Then the path found by A* search may pass by obstacles with some additional clearance.
+
+### Paths Aligned to Grid
+Another concern with discretized spaces is that the resultant path will follow the discrete cells. When a robot goes to execute the path in the real world, it may seem funny to see a robot zig-zag its way across a room instead of driving down the room’s diagonal. In such a scenario, a path that is optimal in the discretized space may be suboptimal in the real world. Some careful path smoothing, with attention paid to the location of obstacles, can fix this problem.
+
+# Wrap-Up
+We've learned some very applicable search algorithms for path planning in a discretized space. Using this knowledge, you'll be able to direct your robot to get from one point on a map to another. The search algorithms are also relevant in many other fields, from planning routes for your next drive to finding your friends on social media sites. Graph search is widely used in today's digital society. In addition to learning the algorithms themselves, you've also learned some essential vocabulary and should be able to assess an algorithm's optimality, efficiency, and other qualities. 
+
+To sum up, the three main processes to discrete path planning are:
+
+- Continuous Representation
+- Discretization
+- Graph Search
+
+See the video [here](https://youtu.be/tplAoLJeBS0) and [here](https://youtu.be/UKntCcGaFNo)
+
+
 
 
 
