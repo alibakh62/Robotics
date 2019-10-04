@@ -189,3 +189,83 @@ While we will not go into significant detail on this topic, the RRT method suppo
 - Unlike PRM, RRT is able to process the additional constraints to handle non-holonomic systems.
 - If delta is set to a small value, the growth rate will be limited. If delta is set to a large value, it is more likely that edges between new and existing nodes will be in collision with obstacles.
 
+# Path Smoothing
+When you look at the paths produced by PRM and RRT, they're by no means optimal and can be quite jerky.
+
+<p align="center">
+<img src="img/path-smoothing1.png" alt="drawing" width="600"/>
+</p>
+
+Instead of using these paths directly, some post-processing can be applied to smooth out the paths and improve the results. One simple algorithm that can be used is often referred to as **path shortcutter**. It looks for ways to shorten the resulting path, by connecting two non-neighboring nodes together. If it's able to find a pair of nodes whose edge is collision-free, then the original path between the two nodes is replaced with the shortcut edge. If this process is successful, then a search algorithm like A* search can be applied to find the path from start to goal. The resultant path may not be optimal, but it proves that moving from start to goal is feasible. 
+
+See the video [here](https://youtu.be/R20Mpz5y7-w).
+
+### Algorithm:
+The following algorithm provides a method for smoothing the path by shortcutting.
+
+
+Keep in mind that the path’s distance is not the only thing that can be optimized by the Path Shortcutter algorithm - it could optimize for path smoothness, expected energy use by the robot, safety, or any other measurable factor.
+
+After the Path Shortcutting algorithm is applied, the result is a more optimized path. It may still not be the _optimal path_, but it should have at the very least moved towards a local minimum. There exist more complex, informed algorithms that can improve the performance of the Path Shortcutter. These are able to use information about the workspace to better guide the algorithm to a more optimal solution.
+
+For large multi-dimensional problems, it is not uncommon for the time taken to optimize a path to exceed the time taken to search for a feasible solution in the first place.
+
+<p align="center">
+<img src="img/path-smoothing-algo.png" alt="drawing" width="600"/>
+</p>
+
+# Overall Concerns
+
+### Not Complete
+Sample-based planning is not complete, it is probabilistically complete. In applications where decisions need to be made quickly, PRM & RRT may fail to find a path in difficult environments, such as the one shown below.
+
+<p align="center">
+<img src="img/overall-concerns1.gif" alt="drawing" width="600"/>
+</p>
+
+To path plan in an environment such as the one presented above, alternate means of sampling can be introduced (such as Gaussian or Bridge sampling). Alternate methods bias their placement of samples to obstacle edges or vertices of the open space.
+
+### Not Optimal
+Sample-based path planning isn’t optimal either - while an algorithm such as A* will find the most optimal path within the graph, the graph is not a thorough representation of the space, and so the true optimal path is unlikely to be represented in the graph.
+
+### Conclusion
+Overall, there is no silver bullet algorithm for sample-based path planning. The PRM & RRT algorithms perform acceptably in most environments, while others require customized solutions. An algorithm that sees a performance improvement in one application, is not guaranteed to perform better in others.
+
+Ultimately, sample-based path planning makes multi-dimensional path planning feasible!
+
+# Sample-Based Planning Wrap-Up
+Probabilistic roadmaps and rapidly exploring random trees are two alternate algorithms for path planning which are espacially applicable in large high-dimensional spaces. Although the algorithms are not complete, they are considered to be **probabilistically complete**, as their completeness grows exponentially with the number of samples collected. The algorithms that we learned here are incredibly applicable in real world robotics. 
+
+### Extended Reading
+At this point, you have the knowledge to read through a paper on path planning. The following paper, [Path Planning for Non-Circular Micro Aerial Vehicles in Constrained Environments](https://www.cs.cmu.edu/~maxim/files/pathplanforMAV_icra13.pdf), addresses the problem of path planning for a quadrotor.
+
+It is an enjoyable read that culminates the past two sections of path planning, as it references a number of planning methods that you have learned, and introduces a present-day application of path planning. Reading the paper will help you gain an appreciation of this branch of robotics, as well as help you gain confidence in the subject.
+
+Some additional definitions that you may find helpful while reading the paper:
+
+- **Anytime algorithm:** an anytime algorithm is an algorithm that will return a solution even if it's computation is halted before it finishes searching the entire space. The longer the algorithm plans, the more optimal the solution will be.
+- **RRT*:** RRT* is a variant of RRT that tries to smooth the tree branches at every step. It does so by looking to see whether a child node can be swapped with it's parent (or it's parent's parent, etc) to produce a more direct path. The result is a less zig-zaggy and more optimal path.
+
+# Introduction to Probabilistic Path Planning
+Recall the exploratory rover introducted at the start of previous lesson. 
+
+<p align="center">
+<img src="img/path-planning-intro.png" alt="drawing" width="600"/>
+</p>
+
+Its task was to find a path from its drop-off location to the goal location that would be safe for humans to follow. The terrain contains a lot of different hazards. The operator of the rover is willing to take whatever risk is necessary, but would naturally want to minimize it as much as possible. **The algorithms that we've learned thus far are unable to adequately model the risk**. For instance, a combinatorial path planning algorithm would have no difficulty finding the path to the goal location. The path may be the best by all other means, but due to the uncertainty of the rover motion, there is a chance that the rover will meet its demise along this path. 
+
+It is possible to inflate the size of the rover to ensure that there is enough room to maneuver. But as we have seen, the algorithm will no longer be complete. 
+
+Another idea is to give negative rewards to dangerous areas of the map so that the search algorithm is more likely to select alternate paths. 
+
+Similar to what we do in reinforcement learning, this is a step in the right direction and would cause the rover to avoid dangerous areas. But, it does not actually consider the uncertainty of rover motion. 
+
+What we'd really like is to model the uncertainty by considering a _**non-deterministic transition model**_. For instance, since the path execution is uncertain, an algorithm that takes the uncertainty into account explicitly is more likely to produce realistic paths. **So, where does that leave us?**
+
+We're back to **Markov decision processes**. 
+
+See the video [here](https://youtu.be/CF6kz2H00ZU).
+
+# Markov Decision Process
+
