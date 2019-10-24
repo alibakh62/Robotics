@@ -33,3 +33,10 @@
 
 # vs code
 *.code-workspace
+
+# docusaurus 
+.dockerignore
+Dockerfile
+docker-compose.yml
+docs
+website
